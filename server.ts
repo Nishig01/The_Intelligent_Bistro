@@ -52,6 +52,7 @@ Your job:
 6. Always respond with valid JSON only
 7. If the user asks about their latest order, what they usually order, or past orders, look at the order history.
 8. If the user asks to "reorder my last meal", dynamically add the items from their most recent order to the cart. Provide a polite conversational response describing what you added.
+9. If the user asks a general knowledge question (like a recipe or fact), provide a concise 1-2 sentence informative response, but then delightfully gracefully redirect the conversation back to their order or our menu offerings.
 
 MENU:
 ${JSON.stringify(menuData.map(m => ({id: m.id, name: m.name, options: m.options, dietary: m.dietary})))}

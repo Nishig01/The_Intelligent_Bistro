@@ -106,7 +106,7 @@ function App() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.8 }}
-                className="text-5xl tracking-[0.2em] uppercase font-serif font-light"
+                className="text-4xl tracking-[0.2em] uppercase font-serif font-light whitespace-nowrap"
               >
                 The Bistro
               </motion.h1>
@@ -136,7 +136,7 @@ function App() {
           }}
           className="fixed top-0 max-w-[430px] w-full px-6 py-4 flex justify-between items-center z-30 transition-colors"
         >
-          <button onClick={handleGoHome} className="flex items-center space-x-2 text-left">
+          <button onClick={handleGoHome} className="flex items-center space-x-2 text-left cursor-pointer">
             <ChefHat size={28} className="text-bistro-charcoal" strokeWidth={1.5} />
             <motion.h1 style={{ opacity: headerOpacity }} className="font-serif text-2xl text-bistro-charcoal">The Bistro</motion.h1>
           </button>
@@ -158,7 +158,7 @@ function App() {
         </motion.header>
 
         {/* Main Content Area */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto pb-32 scroll-smooth">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto pb-safe scroll-smooth">
           
           {/* Hero Section */}
           <div className="pt-28 px-6 pb-2">
@@ -220,14 +220,16 @@ function App() {
           )}
 
           {/* Category Tabs */}
-          <div className="px-6 mb-6">
-            <h3 className="font-serif text-[22px] text-bistro-charcoal mb-4">Menu</h3>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6">
+          <div className="px-6 mb-2">
+            <h3 className="font-serif text-[22px] text-bistro-charcoal">Menu</h3>
+          </div>
+          <div className="sticky top-[72px] z-20 bg-[#F8F5F0]/95 backdrop-blur-xl py-3 mb-6 shadow-[0_8px_20px_-10px_rgba(0,0,0,0.05)] border-b border-gray-200/30">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide px-6">
               {categories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[14px] transition-all duration-300 font-medium tracking-wide border ${
+                  className={`whitespace-nowrap px-6 py-2.5 rounded-full text-[14px] transition-all duration-300 font-medium tracking-wide border cursor-pointer ${
                     activeCategory === cat 
                       ? 'bg-bistro-charcoal text-white border-bistro-charcoal shadow-md' 
                       : 'bg-white text-bistro-gray border-bistro-gray-light hover:border-gray-300'
@@ -265,27 +267,6 @@ function App() {
             </AnimatePresence>
           </div>
         </div>
-
-        {/* Floating AI Button (Orb) */}
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 1, type: "spring", stiffness: 200, damping: 20 }}
-          className="absolute bottom-8 right-6 z-20"
-        >
-          <motion.button
-            onClick={() => setIsAiOpen(true)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="group relative w-16 h-16 bg-gradient-to-tr from-[#111] to-[#333] text-white rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.4)] flex items-center justify-center"
-          >
-            {/* Glowing orbital layers */}
-            <div className="absolute inset-0 rounded-full bg-[#C1A87D] opacity-30 animate-ping" style={{ animationDuration: '3s' }} />
-            <div className="absolute inset-[-4px] rounded-full border border-[#C1A87D]/30" />
-            
-            <Sparkles size={24} className="text-[#C1A87D] relative z-10" />
-          </motion.button>
-        </motion.div>
 
         {/* Modals & Drawers */}
         <FoodDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
@@ -332,6 +313,28 @@ function App() {
             </>
           )}
         </AnimatePresence>
+
+        {/* Floating AI Button */}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 1, type: "spring", stiffness: 200, damping: 20 }}
+          className="absolute bottom-8 right-6 z-20"
+        >
+          <motion.button
+            onClick={() => setIsAiOpen(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="group relative w-16 h-16 bg-gradient-to-tr from-[#111] to-[#333] text-white rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.4)] flex items-center justify-center"
+          >
+            {/* Glowing orbital layers */}
+            <div className="absolute inset-0 rounded-full bg-[#C1A87D] opacity-30 animate-ping" style={{ animationDuration: '3s' }} />
+            <div className="absolute inset-[-4px] rounded-full border border-[#C1A87D]/30" />
+            
+            <Sparkles size={24} className="text-[#C1A87D] relative z-10" />
+          </motion.button>
+        </motion.div>
+
       </div>
     </div>
     </>
@@ -340,7 +343,8 @@ function App() {
 
 // Badge Component
 function CartBadge() {
-  const totalItems = useCartStore(state => state.getTotalItems());
+  const items = useCartStore(state => state.items);
+  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   if (totalItems === 0) return null;
   return (
     <motion.div 

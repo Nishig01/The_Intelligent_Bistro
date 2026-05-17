@@ -35,4 +35,22 @@
 body {
   @apply bg-[var(--color-bistro-ivory)] text-[var(--color-bistro-charcoal)] antialiased;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+button, a, [role="button"] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 20px);
 }

@@ -83,7 +83,7 @@ export function CheckoutDrawer({ onClose, onSuccess, onBack }: CheckoutDrawerPro
 
   if (paymentState === 'success') {
     return (
-      <div className="absolute inset-y-0 right-0 w-full sm:w-[450px] bg-white shadow-2xl z-50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="absolute bottom-0 inset-x-0 h-[85%] bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.2)] z-50 flex flex-col items-center justify-center p-6 text-center rounded-t-[32px] overflow-hidden">
         <motion.div 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -114,13 +114,16 @@ export function CheckoutDrawer({ onClose, onSuccess, onBack }: CheckoutDrawerPro
 
   return (
     <motion.div 
-      initial={{ x: '100%' }}
-      animate={{ x: 0 }}
-      exit={{ x: '100%' }}
+      initial={{ y: '100%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="absolute inset-y-0 right-0 w-full sm:w-[450px] bg-[#FAFAFA] shadow-2xl z-50 flex flex-col"
+      className="absolute bottom-0 inset-x-0 h-[85%] bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.2)] z-50 flex flex-col rounded-t-[32px] overflow-hidden"
     >
-      <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-white shadow-sm shrink-0">
+      <div className="flex justify-center pt-3 pb-1 bg-white shrink-0">
+        <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+      </div>
+      <div className="flex justify-between items-center px-6 pb-4 pt-2 border-b border-gray-100 bg-white shadow-sm shrink-0">
         <div className="flex items-center gap-3">
           <button onClick={onBack} disabled={paymentState !== 'idle'} className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50">
             <ChevronLeft size={22} className="text-[#1A1A1A]"/>
@@ -202,6 +205,21 @@ export function CheckoutDrawer({ onClose, onSuccess, onBack }: CheckoutDrawerPro
 
         {/* Standard Checkout */}
         <div className="space-y-4">
+          <div>
+            <label className="text-[13px] font-medium text-gray-700 block mb-1.5">Saved Payment Methods</label>
+            <div className="flex gap-2 w-full overflow-x-auto pb-2 scrollbar-hide">
+               <button onClick={() => { setCardNumber('4242 4242 4242 4242'); setExpiry('12/28'); setCvc('123'); setName('John Doe'); }} className="flex border border-gray-200 p-3 rounded-xl bg-gray-50 items-center justify-between hover:border-gray-400 group cursor-pointer whitespace-nowrap">
+                 <div className="flex items-center gap-2 text-[14px] text-gray-600 font-medium">
+                   <CreditCard size={18} className="text-gray-400" /> Waitress Visa (**** 4242)
+                 </div>
+               </button>
+               <button onClick={() => { setCardNumber('5555 5555 5555 4444'); setExpiry('08/25'); setCvc('456'); setName('Jane Doe'); }} className="flex border border-gray-200 p-3 rounded-xl bg-gray-50 items-center justify-between hover:border-gray-400 group cursor-pointer whitespace-nowrap">
+                 <div className="flex items-center gap-2 text-[14px] text-gray-600 font-medium">
+                   <CreditCard size={18} className="text-gray-400" /> Personal MC (**** 4444)
+                 </div>
+               </button>
+            </div>
+          </div>
           <div>
             <label className="text-[13px] font-medium text-gray-700 block mb-1.5">Card Information</label>
             <div className="rounded-xl overflow-hidden border border-gray-200 bg-white">

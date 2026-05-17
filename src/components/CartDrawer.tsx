@@ -42,13 +42,16 @@ export function CartDrawer({ onClose }: { onClose: () => void }) {
         ) : (
           <motion.div 
             key="cart"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="absolute inset-y-0 right-0 w-full sm:w-[400px] bg-white shadow-2xl z-50 flex flex-col"
+            className="absolute bottom-0 inset-x-0 h-[85%] bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.2)] z-50 flex flex-col rounded-t-[32px] overflow-hidden"
           >
-            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-white/80 backdrop-blur-xl shrink-0">
+            <div className="flex justify-center pt-3 pb-1 bg-white shrink-0">
+              <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+            </div>
+            <div className="flex justify-between items-center px-6 pb-4 pt-2 border-b border-gray-100 bg-white/80 backdrop-blur-xl shrink-0">
               <h2 className="font-serif text-3xl text-bistro-charcoal">Your Order</h2>
               <button onClick={onClose} disabled={orderState !== 'idle'} className="p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50">
                 <X size={24} className="text-[#1A1A1A]"/>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User as UserIcon, LogOut, Receipt, Heart, Settings, ChevronRight, Loader2, ChevronLeft, MapPin, Package, Clock, Bell } from 'lucide-react';
+import { X, User as UserIcon, LogOut, Receipt, Heart, Settings, ChevronRight, Loader2, ChevronLeft, MapPin, Package, Clock, Bell, Plus, Minus } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useOrderStore } from '../stores/useOrderStore';
 import { useFavoriteStore } from '../stores/useFavoriteStore';
 import { useSettingsStore, Address } from '../stores/useSettingsStore';
+import { useCartStore } from '../stores/useCartStore';
 import { menuData } from '../data/menu';
 import { FoodImage } from './ui/FoodImage';
 
@@ -22,6 +23,7 @@ export function ProfileDrawer({ onClose }: ProfileDrawerProps) {
   const { orders } = useOrderStore();
   const { favorites, toggleFavorite } = useFavoriteStore();
   const { addresses, addAddress, updateAddress, removeAddress, notifications, toggleNotification } = useSettingsStore();
+  const { items, addItem, removeItem } = useCartStore();
 
   const [editingAddress, setEditingAddress] = useState<Address | Partial<Address> | null>(null);
   const [now, setNow] = useState(Date.now());
@@ -103,13 +105,16 @@ export function ProfileDrawer({ onClose }: ProfileDrawerProps) {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm z-40"
       />
       <motion.div 
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="absolute inset-y-0 right-0 w-full max-w-sm bg-[#FAFAFA] shadow-2xl z-50 flex flex-col"
+        className="absolute bottom-0 inset-x-0 h-[85%] bg-[#FAFAFA] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] z-50 flex flex-col rounded-t-[32px] overflow-hidden"
       >
-        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-white shadow-sm shrink-0">
+        <div className="flex justify-center pt-3 pb-1 bg-white shrink-0">
+          <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+        </div>
+        <div className="flex justify-between items-center px-6 pb-4 pt-2 border-b border-gray-100 bg-white shadow-sm shrink-0">
           {currentView !== 'main' ? (
             <button onClick={() => setCurrentView('main')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
               <ChevronLeft size={22} className="text-[#1A1A1A]"/>
@@ -369,23 +374,33 @@ export function ProfileDrawer({ onClose }: ProfileDrawerProps) {
                     <p className="text-sm font-light mt-1">Tap the heart icon on items you love.</p>
                   </div>
                 ) : (
-                  menuData.filter(item => favorites.includes(item.id)).map(item => (
-                    <div key={item.id} className="flex gap-4 items-center bg-white p-3 rounded-2xl border border-gray-100 shadow-sm relative group">
+                  menuData.filter(item => favorites.includes(item.id)).map(item => {
+                    const cartItemCount = items.filter(i => i.id === item.id).reduce((sum, i) => sum + i.quantity, 0);
+                    return (
+                    <div key={item.id} className="flex gap-4 items-center bg-white p-3 rounded-2xl border border-gray-100 shadow-sm relative group pr-4">
                       <button 
                         onClick={() => toggleFavorite(item.id)}
                         className="absolute right-3 top-3 p-1.5 bg-red-50 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove from favorites"
                       >
                         <Heart size={14} fill="currentColor" />
                       </button>
                       <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 relative">
                         <FoodImage src={item.imageUrl} alt={item.name} containerClassName="w-full h-full" />
                       </div>
-                      <div className="flex-1 pr-8">
+                      <div className="flex-1 pr-4">
                         <h4 className="font-medium text-[15px] text-[#1A1A1A] leading-tight mb-1">{item.name}</h4>
                         <span className="font-serif text-lg text-[#1A1A1A]">${item.price.toFixed(2)}</span>
                       </div>
+                      <button 
+                        onClick={() => cartItemCount > 0 ? removeItem(item.id) : addItem(item, 1, [])}
+                        className={`p-3 rounded-xl transition-colors ${cartItemCount > 0 ? 'bg-[#C1A87D] text-white shadow-sm hover:opacity-90' : 'bg-gray-50 text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white'}`}
+                        title={cartItemCount > 0 ? "Remove from cart" : "Add to cart"}
+                      >
+                        {cartItemCount > 0 ? <Minus size={18} /> : <Plus size={18} />}
+                      </button>
                     </div>
-                  ))
+                  )})
                 )}
               </motion.div>
             )}
