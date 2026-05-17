@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitives
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+
+    // User Profile Validation
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email']) && 
+             data.keys().size() <= 7 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 100 &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 20)) &&
+             (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 500)) &&
+             (!('deliveryAddress' in data) || (data.deliveryAddress is string && data.deliveryAddress.size() <= 255));
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming()) && 
+                      incoming().createdAt == request.time;
+      allow update: if isOwner(userId) && isValidUser(incoming()) && 
+                      incoming().updatedAt == request.time &&
+                      incoming().email == existing().email &&
+                      incoming().createdAt == existing().createdAt &&
+                      !incoming().keys().hasAny(['isAdmin']);
+    }
+
+    // Address Validation
+    function isValidAddress(data) {
+      return data.keys().hasAll(['userId', 'label', 'fullName', 'street', 'city', 'state', 'zipCode', 'isDefault']) &&
+             data.keys().size() <= 10 &&
+             data.userId == request.auth.uid &&
+             data.label in ['Home', 'Work', 'Other'] &&
+             data.fullName is string && data.fullName.size() <= 100 &&
+             data.street is string && data.street.size() <= 200 &&
+             data.city is string && data.city.size() <= 100 &&
+             data.state is string && data.state.size() <= 50 &&
+             data.zipCode is string && data.zipCode.size() <= 20 &&
+             data.isDefault is bool;
+    }
+
+    match /addresses/{addressId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidAddress(incoming()) && 
+                       isValidId(addressId) &&
+                       incoming().createdAt == request.time;
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && 
+                       isValidAddress(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Order Validation
+    function isValidOrder(data) {
+      return data.keys().hasAll(['userId', 'items', 'totalAmount', 'status', 'deliveryAddress', 'createdAt']) &&
+             data.keys().size() <= 8 &&
+             data.userId == request.auth.uid &&
+             data.items is list && data.items.size() > 0 &&
+             data.totalAmount is number && data.totalAmount >= 0 &&
+             data.status in ['pending', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'] &&
+             data.deliveryAddress is map;
+    }
+
+    match /orders/{orderId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidOrder(incoming()) && 
+                       isValidId(orderId) &&
+                       incoming().createdAt == request.time &&
+                       incoming().status == 'pending';
+      allow update: if isSignedIn() && existing().userId == request.auth.uid &&
+                       isValidOrder(incoming()) &&
+                       existing().status != 'delivered' && existing().status != 'cancelled' && (
+                         // Customer actions: Cancel
+                         (incoming().status == 'cancelled' && incoming().diff(existing()).affectedKeys().hasOnly(['status']))
+                       );
+    }
+  }
+}

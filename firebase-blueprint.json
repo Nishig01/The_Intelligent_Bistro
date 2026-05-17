@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information and preferences",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the user" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "phone": { "type": "string", "description": "Phone number for delivery contact" },
+        "avatar": { "type": "string", "description": "URL to profile picture" },
+        "deliveryAddress": { "type": "string", "description": "Primary delivery address string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email"]
+    },
+    "Address": {
+      "title": "Delivery Address",
+      "description": "Stored delivery location for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner of the address" },
+        "label": { "type": "string", "enum": ["Home", "Work", "Other"] },
+        "fullName": { "type": "string" },
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "zipCode": { "type": "string" },
+        "isDefault": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "label", "fullName", "street", "city", "state", "zipCode"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A food order placed by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "items": { "type": "array", "description": "List of ordered items" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "preparing", "out_for_delivery", "delivered", "cancelled"] },
+        "deliveryAddress": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "items", "totalAmount", "status", "deliveryAddress", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/addresses/{addressId}": {
+      "schema": "Address",
+      "description": "User delivery addresses"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "User orders"
+    }
+  }
+}
