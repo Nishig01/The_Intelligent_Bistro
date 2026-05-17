@@ -1,0 +1,6 @@
+{
+  "name": "The Intelligent Bistro",
+  "description": "A premium AI-powered restaurant ordering MVP with natural language cart management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
