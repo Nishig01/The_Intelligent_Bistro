@@ -70,7 +70,13 @@ export default function OrdersScreen() {
       <View style={styles.orderFooter}>
         <View style={styles.addressRow}>
           <MapPin size={14} color="#9CA3AF" />
-          <Text style={styles.addressText} numberOfLines={1}>{order.address.street}</Text>
+          <Text style={styles.addressText} numberOfLines={1}>
+            {order.orderType === 'dine-in' 
+              ? `Table ${order.tableNumber}` 
+              : order.orderType === 'pickup' 
+                ? 'Pickup: Main Branch' 
+                : order.address?.street || 'No Address Provided'}
+          </Text>
         </View>
         
         <View style={styles.actions}>

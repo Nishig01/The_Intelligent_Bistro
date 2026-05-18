@@ -32,13 +32,17 @@ export default function FoodDetails() {
   const handleAddToCart = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     addItem(
-      item, 
-      quantity, 
-      selectedOptions, 
+      item,
+      quantity,
+      selectedOptions,
       spiceLevel,
-      instructions
+      instructions.trim() || undefined
     );
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
   };
 
   const toggleOption = (option: string) => {
@@ -173,23 +177,38 @@ export default function FoodDetails() {
                </View>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionScroll}>
-               {[
-                 { id: 's1', name: 'Truffle Fries', price: 6.50, img: 'https://images.unsplash.com/photo-1630384065922-1aeabb805627?auto=format&fit=crop&q=80&w=200' },
-                 { id: 's2', name: 'Craft IPA', price: 8.00, img: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?auto=format&fit=crop&q=80&w=200' },
-                 { id: 's3', name: 'Garlic Aioli', price: 1.50, img: 'https://images.unsplash.com/photo-1610450537449-700938466635?auto=format&fit=crop&q=80&w=200' }
-               ].map((s, idx) => (
-                 <Pressable key={s.id} style={styles.suggestionCard}>
-                    <Image 
-                      source={{ uri: s.img }} 
-                      style={styles.suggestionImg} 
-                      contentFit="cover"
-                    />
-                    <View style={styles.suggestionInfo}>
-                       <Text style={styles.suggestionName}>{s.name}</Text>
-                       <Text style={styles.suggestionPrice}>+${s.price.toFixed(2)}</Text>
-                    </View>
-                 </Pressable>
-               ))}
+               {(() => {
+                 // Pick 3 real menu items from different categories, excluding the current item
+                 const paired = menuData
+                   .filter(m => m.id !== item.id)
+                   .sort(() => 0.5 - Math.random())
+                   .slice(0, 3);
+                 return paired.map((s) => (
+                   <Pressable
+                     key={s.id}
+                     style={styles.suggestionCard}
+                     onPress={() => {
+                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                       addItem(s, 1, [], undefined, undefined);
+                     }}
+                   >
+                     <View style={styles.suggestionImgWrapper}>
+                       <Image
+                         source={{ uri: s.imageUrl }}
+                         style={styles.suggestionImg}
+                         contentFit="cover"
+                       />
+                       <View style={styles.suggestionAddBtn}>
+                         <Plus size={14} color="#FFF" />
+                       </View>
+                     </View>
+                     <View style={styles.suggestionInfo}>
+                        <Text style={styles.suggestionName} numberOfLines={1}>{s.name}</Text>
+                        <Text style={styles.suggestionPrice}>+${s.price.toFixed(2)}</Text>
+                     </View>
+                   </Pressable>
+                 ));
+               })()}
             </ScrollView>
           </Animated.View>
 
@@ -387,6 +406,7 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     minHeight: 80,
     textAlignVertical: 'top',
+    outlineWidth: 0,
   },
   charCount: {
     fontSize: 10,
@@ -427,9 +447,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F3F4F6',
   },
+  suggestionImgWrapper: {
+    width: '100%',
+    height: 90,
+    backgroundColor: '#F3F4F6',
+    position: 'relative',
+  },
+  suggestionAddBtn: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#1A1A1A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   suggestionImg: {
     width: '100%',
-    height: 80,
+    height: 90,
     backgroundColor: '#F3F4F6',
   },
   suggestionInfo: {

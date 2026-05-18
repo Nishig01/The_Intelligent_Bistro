@@ -1,15 +1,15 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert, Platform, ActivityIndicator } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, MapPin, CreditCard, ShieldCheck, ChevronRight, Apple, Smartphone, Info, Wallet } from 'lucide-react-native';
+import { BottomSheetBackdrop, BottomSheetModal } from '@gorhom/bottom-sheet';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { Apple, ChevronLeft, ChevronRight, CreditCard, MapPin, ShieldCheck, Smartphone, Wallet } from 'lucide-react-native';
+import { useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AddressType, useAddressStore } from '../frontend/stores/useAddressStore';
 import { useAuthStore } from '../frontend/stores/useAuthStore';
 import { useCartStore } from '../frontend/stores/useCartStore';
-import { useAddressStore, AddressType } from '../frontend/stores/useAddressStore';
 import { useOrderStore } from '../frontend/stores/useOrderStore';
-import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeInDown, Layout } from 'react-native-reanimated';
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 
 export default function Checkout() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function Checkout() {
   const { items, getTotalPrice, clearCart } = useCartStore();
   const { addresses } = useAddressStore();
   const { addOrder } = useOrderStore();
-  
+
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['60%'], []);
 
@@ -29,13 +29,17 @@ export default function Checkout() {
   const [tableNumber, setTableNumber] = useState('');
 
   // Guest fields
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestEmailError, setGuestEmailError] = useState('');
   const [guestStreet, setGuestStreet] = useState('');
   const [guestCity, setGuestCity] = useState('');
   const [guestZip, setGuestZip] = useState('');
   const [guestCard, setGuestCard] = useState('');
   const [guestExpiry, setGuestExpiry] = useState('');
   const [guestCvc, setGuestCvc] = useState('');
-  
+
+  const validateEmail = (val: string) => /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(val.trim());
+
   const subtotal = getTotalPrice();
   const deliveryFee = orderType === 'delivery' ? 2.99 : 0;
   const taxRate = 0.0825;
@@ -46,17 +50,22 @@ export default function Checkout() {
   const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
 
   const handlePlaceOrder = async () => {
-    if (orderType === 'delivery') {
-      if (isAuthenticated && !defaultAddress) {
-        Alert.alert('Delivery Address', 'Please add a delivery address first.');
+    // Email validation for guest
+    if (!isAuthenticated) {
+      if (!guestEmail || !validateEmail(guestEmail)) {
+        setGuestEmailError('Please enter a valid email address (e.g. you@example.com)');
+        Alert.alert('Email Required', 'We need your email to send the order confirmation.');
         return;
       }
+      setGuestEmailError('');
+    }
+    if (orderType === 'delivery') {
       if (!isAuthenticated && (!guestStreet || !guestCity || !guestZip)) {
         Alert.alert('Delivery Address', 'Please provide your full delivery address.');
         return;
       }
     }
-    
+
     if (!isAuthenticated && paymentMethod === 'card' && (!guestCard || !guestExpiry || !guestCvc)) {
       Alert.alert('Payment Details', 'Please provide your card details to checkout.');
       return;
@@ -73,9 +82,9 @@ export default function Checkout() {
     // Simulate payment processing
     setTimeout(() => {
       const orderId = `BSTR-${Math.floor(1000 + Math.random() * 9000)}`;
-      
-      const finalAddress = isAuthenticated 
-        ? defaultAddress 
+
+      const finalAddress = isAuthenticated
+        ? (defaultAddress || { id: 'guest', label: 'Home' as AddressType, fullName: user?.name || 'User', street: user?.deliveryAddress || '123 Default St', city: 'City', state: '', zipCode: '00000', isDefault: true })
         : { id: 'guest', label: 'Home' as AddressType, fullName: 'Guest', street: guestStreet, city: guestCity, state: '', zipCode: guestZip, isDefault: true };
 
       addOrder({
@@ -92,12 +101,34 @@ export default function Checkout() {
         paymentMethod: paymentMethod === 'card' ? (isAuthenticated ? 'Visa •••• 4242' : `Card •••• ${guestCard.slice(-4) || 'XXXX'}`) : paymentMethod === 'apple' ? 'Apple Pay' : 'Google Pay',
         eta: orderType === 'delivery' ? '25-35 mins' : '10-15 mins',
         orderType,
-        tableNumber
+        tableNumber,
+        customerName: isAuthenticated ? user?.name : 'Valued Guest',
+        customerEmail: isAuthenticated ? user?.email : guestEmail
       });
 
       setIsProcessing(false);
       clearCart();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // Send order confirmation email (fire-and-forget)
+      const emailTo = isAuthenticated ? user?.email : guestEmail;
+      if (emailTo) {
+        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+        fetch(`${API_URL}/api/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId,
+            items: [...items],
+            total,
+            customerName: isAuthenticated ? user?.name : 'Valued Guest',
+            email: emailTo,
+            orderType,
+            eta: orderType === 'delivery' ? '25-35 mins' : '10-15 mins',
+          })
+        }).catch(err => console.warn('Email send failed (non-blocking):', err));
+      }
+
       router.push({
         pathname: "/order-confirmation/[id]" as any,
         params: { id: orderId }
@@ -114,7 +145,16 @@ export default function Checkout() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.header} edges={['top']}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}
+          style={styles.backButton}
+        >
           <ChevronLeft size={24} color="#1A1A1A" />
         </Pressable>
         <Text style={styles.headerTitle}>Checkout</Text>
@@ -126,26 +166,48 @@ export default function Checkout() {
         <Animated.View entering={FadeInDown} style={styles.section}>
           <Text style={styles.sectionTitle}>Order Type</Text>
           <View style={styles.paymentMethods}>
-             <Pressable 
+            <Pressable
               style={[styles.paymentBtn, orderType === 'delivery' && styles.paymentBtnActive]}
               onPress={() => setOrderType('delivery')}
-             >
-                <Text style={[styles.paymentText, orderType === 'delivery' && styles.paymentTextActive]}>Delivery</Text>
-             </Pressable>
-             <Pressable 
+            >
+              <Text style={[styles.paymentText, orderType === 'delivery' && styles.paymentTextActive]}>Delivery</Text>
+            </Pressable>
+            <Pressable
               style={[styles.paymentBtn, orderType === 'pickup' && styles.paymentBtnActive]}
               onPress={() => setOrderType('pickup')}
-             >
-                <Text style={[styles.paymentText, orderType === 'pickup' && styles.paymentTextActive]}>Pickup</Text>
-             </Pressable>
-             <Pressable 
+            >
+              <Text style={[styles.paymentText, orderType === 'pickup' && styles.paymentTextActive]}>Pickup</Text>
+            </Pressable>
+            <Pressable
               style={[styles.paymentBtn, orderType === 'dine-in' && styles.paymentBtnActive]}
               onPress={() => setOrderType('dine-in')}
-             >
-                <Text style={[styles.paymentText, orderType === 'dine-in' && styles.paymentTextActive]}>Dine-in</Text>
-             </Pressable>
+            >
+              <Text style={[styles.paymentText, orderType === 'dine-in' && styles.paymentTextActive]}>Dine-in</Text>
+            </Pressable>
           </View>
         </Animated.View>
+
+        {/* Guest Contact Info */}
+        {!isAuthenticated && (
+          <Animated.View entering={FadeInDown.delay(25)} style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Contact Info</Text>
+            </View>
+            <View style={styles.guestForm}>
+              <TextInput
+                style={[styles.input, !!guestEmailError && { borderColor: '#EF4444', borderWidth: 1.5 }]}
+                placeholder="your@email.com (for order confirmation)"
+                placeholderTextColor="#D1D5DB"
+                value={guestEmail}
+                onChangeText={(t) => { setGuestEmail(t); setGuestEmailError(''); }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {!!guestEmailError ? <Text style={{ fontSize: 12, color: '#EF4444', marginTop: -4, marginLeft: 4 }}>{guestEmailError}</Text> : null}
+            </View>
+          </Animated.View>
+        )}
 
         {/* Dynamic Details based on Order Type */}
         {orderType === 'delivery' && (
@@ -158,10 +220,10 @@ export default function Checkout() {
                 </Pressable>
               )}
             </View>
-            
+
             {isAuthenticated ? (
-              <Pressable 
-                style={styles.addressCard} 
+              <Pressable
+                style={styles.addressCard}
                 onPress={() => router.push('/manage-addresses')}
               >
                 <View style={styles.iconCircle}>
@@ -182,24 +244,24 @@ export default function Checkout() {
               </Pressable>
             ) : (
               <View style={styles.guestForm}>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Street Address" 
+                <TextInput
+                  style={styles.input}
+                  placeholder="Street Address"
                   placeholderTextColor="#D1D5DB"
                   value={guestStreet}
                   onChangeText={setGuestStreet}
                 />
-                <View style={{flexDirection: 'row', gap: 10}}>
-                  <TextInput 
-                    style={[styles.input, {flex: 2}]} 
-                    placeholder="City" 
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TextInput
+                    style={[styles.input, { flex: 2 }]}
+                    placeholder="City"
                     placeholderTextColor="#D1D5DB"
                     value={guestCity}
                     onChangeText={setGuestCity}
                   />
-                  <TextInput 
-                    style={[styles.input, {flex: 1}]} 
-                    placeholder="Zip" 
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    placeholder="Zip"
                     placeholderTextColor="#D1D5DB"
                     keyboardType="numeric"
                     value={guestZip}
@@ -215,14 +277,14 @@ export default function Checkout() {
           <Animated.View entering={FadeInDown.delay(50)} style={styles.section}>
             <Text style={styles.sectionTitle}>Table Number</Text>
             <View style={styles.tableInputContainer}>
-               <TextInput 
-                 style={styles.tableInput} 
-                 placeholder="E.g. 12" 
-                 placeholderTextColor="#9CA3AF"
-                 value={tableNumber} 
-                 onChangeText={setTableNumber} 
-                 keyboardType="numeric" 
-               />
+              <TextInput
+                style={styles.tableInput}
+                placeholder="E.g. 12"
+                placeholderTextColor="#9CA3AF"
+                value={tableNumber}
+                onChangeText={setTableNumber}
+                keyboardType="numeric"
+              />
             </View>
           </Animated.View>
         )}
@@ -231,27 +293,27 @@ export default function Checkout() {
         <Animated.View entering={FadeInDown.delay(100)} style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
           <View style={styles.paymentMethods}>
-             <Pressable 
+            <Pressable
               style={[styles.paymentBtn, paymentMethod === 'apple' && styles.paymentBtnActive]}
               onPress={() => setPaymentMethod('apple')}
-             >
-                <Apple size={20} color={paymentMethod === 'apple' ? "#FFF" : "#1A1A1A"} />
-                <Text style={[styles.paymentText, paymentMethod === 'apple' && styles.paymentTextActive]}>Pay</Text>
-             </Pressable>
-             <Pressable 
+            >
+              <Apple size={20} color={paymentMethod === 'apple' ? "#FFF" : "#1A1A1A"} />
+              <Text style={[styles.paymentText, paymentMethod === 'apple' && styles.paymentTextActive]}>Pay</Text>
+            </Pressable>
+            <Pressable
               style={[styles.paymentBtn, paymentMethod === 'google' && styles.paymentBtnActive]}
               onPress={() => setPaymentMethod('google')}
-             >
-                <Smartphone size={20} color={paymentMethod === 'google' ? "#FFF" : "#1A1A1A"} />
-                <Text style={[styles.paymentText, paymentMethod === 'google' && styles.paymentTextActive]}>Google Pay</Text>
-             </Pressable>
-             <Pressable 
+            >
+              <Smartphone size={20} color={paymentMethod === 'google' ? "#FFF" : "#1A1A1A"} />
+              <Text style={[styles.paymentText, paymentMethod === 'google' && styles.paymentTextActive]}>Google Pay</Text>
+            </Pressable>
+            <Pressable
               style={[styles.paymentBtn, paymentMethod === 'card' && styles.paymentBtnActive]}
               onPress={() => setPaymentMethod('card')}
-             >
-                <CreditCard size={20} color={paymentMethod === 'card' ? "#FFF" : "#1A1A1A"} />
-                <Text style={[styles.paymentText, paymentMethod === 'card' && styles.paymentTextActive]}>Card</Text>
-             </Pressable>
+            >
+              <CreditCard size={20} color={paymentMethod === 'card' ? "#FFF" : "#1A1A1A"} />
+              <Text style={[styles.paymentText, paymentMethod === 'card' && styles.paymentTextActive]}>Card</Text>
+            </Pressable>
           </View>
 
           {paymentMethod === 'card' && (
@@ -266,27 +328,27 @@ export default function Checkout() {
                 </>
               ) : (
                 <>
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="Card Number" 
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Card Number"
                     placeholderTextColor="#D1D5DB"
                     keyboardType="numeric"
                     maxLength={16}
                     value={guestCard}
                     onChangeText={setGuestCard}
                   />
-                  <View style={{flexDirection: 'row', gap: 10}}>
-                    <TextInput 
-                      style={[styles.input, {flex: 1}]} 
-                      placeholder="MM/YY" 
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      placeholder="MM/YY"
                       placeholderTextColor="#D1D5DB"
                       maxLength={5}
                       value={guestExpiry}
                       onChangeText={setGuestExpiry}
                     />
-                    <TextInput 
-                      style={[styles.input, {flex: 1}]} 
-                      placeholder="CVC" 
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      placeholder="CVC"
                       placeholderTextColor="#D1D5DB"
                       keyboardType="numeric"
                       maxLength={3}
@@ -308,7 +370,7 @@ export default function Checkout() {
           </View>
           <View style={styles.tipOptions}>
             {tips.map(tip => (
-              <Pressable 
+              <Pressable
                 key={tip}
                 onPress={() => setSelectedTip(selectedTip === tip ? 0 : tip)}
                 style={[styles.tipBtn, selectedTip === tip && styles.tipBtnActive]}
@@ -316,9 +378,9 @@ export default function Checkout() {
                 <Text style={[styles.tipText, selectedTip === tip && styles.tipTextActive]}>${tip}</Text>
               </Pressable>
             ))}
-            <Pressable 
+            <Pressable
               style={[styles.tipBtn, !tips.includes(selectedTip || 0) && selectedTip !== 0 && selectedTip !== null && styles.tipBtnActive]}
-              onPress={() => {}} // Custom tip modal
+              onPress={() => { }} // Custom tip modal
             >
               <Text style={[styles.tipText]}>Custom</Text>
             </Pressable>
@@ -363,8 +425,8 @@ export default function Checkout() {
 
       {/* Footer / Processing Overlay */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <Pressable 
-          style={[styles.mainBtn, isProcessing && styles.mainBtnDisabled]} 
+        <Pressable
+          style={[styles.mainBtn, isProcessing && styles.mainBtnDisabled]}
           onPress={handlePlaceOrder}
           disabled={isProcessing}
         >
@@ -382,11 +444,11 @@ export default function Checkout() {
       {isProcessing && (
         <Animated.View entering={FadeIn} style={StyleSheet.absoluteFill}>
           <View style={styles.overlay}>
-             <View style={styles.processingCard}>
-                <ActivityIndicator size="large" color="#C1A87D" />
-                <Text style={styles.processingText}>Processing Payment...</Text>
-                <Text style={styles.processingSubtext}>Please do not close the app</Text>
-             </View>
+            <View style={styles.processingCard}>
+              <ActivityIndicator size="large" color="#C1A87D" />
+              <Text style={styles.processingText}>Processing Payment...</Text>
+              <Text style={styles.processingSubtext}>Please do not close the app</Text>
+            </View>
           </View>
         </Animated.View>
       )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useCartStore, CartItem } from '../frontend/stores/useCartStore';
+import { menuData } from '../frontend/data/menu';
 import { ChevronLeft, Trash2, Plus, Minus, CreditCard, ShoppingBag, MapPin, Flame, MessageSquareText } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,7 +38,16 @@ export default function Cart() {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeHeader} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable 
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/');
+              }
+            }} 
+            style={styles.backButton}
+          >
             <ChevronLeft size={24} color="#1A1A1A" />
           </Pressable>
           <Text style={styles.headerTitle}>Your Basket</Text>
@@ -83,23 +93,23 @@ export default function Cart() {
                   
                   {/* Customizations display */}
                   <View style={styles.modifierRow}>
-                    {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                    {(item.selectedModifiers && item.selectedModifiers.length > 0) ? (
                       <Text style={styles.modifierText}>{item.selectedModifiers.join(', ')}</Text>
-                    )}
-                    {item.spiceLevel && (
+                    ) : null}
+                    {item.spiceLevel ? (
                       <View style={styles.spiceBadge}>
                         <Flame size={12} color="#EF4444" />
                         <Text style={styles.spiceText}>{item.spiceLevel === 1 ? 'Mild' : item.spiceLevel === 2 ? 'Med' : 'Hot'}</Text>
                       </View>
-                    )}
+                    ) : null}
                   </View>
 
-                  {item.instructions && (
+                  {item.instructions ? (
                     <View style={styles.instructionNote}>
                       <MessageSquareText size={12} color="#9CA3AF" />
                       <Text style={styles.instructionText} numberOfLines={1}>{item.instructions}</Text>
                     </View>
-                  )}
+                  ) : null}
 
                   <View style={styles.itemFooter}>
                     <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
@@ -117,21 +127,42 @@ export default function Cart() {
               </Animated.View>
             ))}
 
-            {/* AI SUGGESTION */}
-            <View style={styles.aiSuggestionCard}>
-               <View style={styles.aiInfo}>
-                  <Text style={styles.aiLabel}>BISTRO SUGGESTION</Text>
-                  <Text style={styles.aiTitle}>Pair with Truffle Fries?</Text>
-                  <Text style={styles.aiText}>Commonly ordered with your selection.</Text>
-               </View>
-               <Pressable style={styles.aiAddBtn}>
-                  <Plus size={20} color="#C1A87D" />
-               </Pressable>
-            </View>
+            {/* AI SUGGESTION — real menu item */}
+            {(() => {
+              const suggestionItem = menuData.find(m => m.id === 'item_73'); // Signature Truffle Fries
+              if (!suggestionItem) return null;
+              const alreadyInCart = items.some(i => i.id === suggestionItem.id);
+              return (
+                <View style={styles.aiSuggestionCard}>
+                  <Image
+                    source={{ uri: suggestionItem.imageUrl }}
+                    style={styles.aiSuggestionImg}
+                    contentFit="cover"
+                  />
+                  <View style={styles.aiInfo}>
+                    <Text style={styles.aiLabel}>BISTRO SUGGESTION</Text>
+                    <Text style={styles.aiTitle}>{suggestionItem.name}</Text>
+                    <Text style={styles.aiText}>${suggestionItem.price.toFixed(2)} · Commonly ordered together</Text>
+                  </View>
+                  <Pressable
+                    style={[styles.aiAddBtn, alreadyInCart && styles.aiAddBtnActive]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      if (!alreadyInCart) addItem(suggestionItem, 1, [], undefined, undefined);
+                    }}
+                  >
+                    {alreadyInCart
+                      ? <Text style={styles.aiAddedText}>✓</Text>
+                      : <Plus size={20} color="#C1A87D" />
+                    }
+                  </Pressable>
+                </View>
+              );
+            })()}
           </View>
         )}
         
-        {items.length > 0 && (
+        {items.length > 0 ? (
           <View style={styles.summarySection}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Subtotal</Text>
@@ -151,12 +182,12 @@ export default function Cart() {
               <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
             </View>
           </View>
-        )}
+        ) : null}
 
         <View style={{ height: 160 }} />
       </ScrollView>
 
-      {items.length > 0 && (
+      {items.length > 0 ? (
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
           <Pressable 
             style={styles.checkoutBtn} 
@@ -166,7 +197,7 @@ export default function Cart() {
             <Text style={styles.checkoutBtnText}>Checkout • ${total.toFixed(2)}</Text>
           </Pressable>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -375,13 +406,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(193, 168, 125, 0.05)',
     borderRadius: 20,
-    padding: 16,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(193, 168, 125, 0.1)',
-    borderStyle: 'dashed',
+    borderColor: 'rgba(193, 168, 125, 0.15)',
+  },
+  aiSuggestionImg: {
+    width: 72,
+    height: 72,
+    backgroundColor: '#F3F4F6',
   },
   aiInfo: {
     flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   aiLabel: {
     fontSize: 10,
@@ -409,6 +446,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(193, 168, 125, 0.2)',
+    marginRight: 12,
+  },
+  aiAddBtnActive: {
+    backgroundColor: '#1A1A1A',
+    borderColor: '#1A1A1A',
+  },
+  aiAddedText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
   summarySection: {
     backgroundColor: '#FFF',

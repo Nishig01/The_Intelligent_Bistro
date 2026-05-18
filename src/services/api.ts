@@ -6,7 +6,13 @@ export const processAIOrder = async (message: string) => {
   const currentCart = useCartStore.getState().items;
   const orderHistory = useOrderStore.getState().orders;
   
-  const response = await fetch('/api/ai/order', {
+  // Automatically detect if we are on Expo Metro port 8081 and point to Express port 3000
+  let apiBase = '';
+  if (typeof window !== 'undefined' && window.location.port === '8081') {
+    apiBase = 'http://localhost:3000';
+  }
+
+  const response = await fetch(`${apiBase}/api/ai/order`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

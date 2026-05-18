@@ -4,11 +4,14 @@ import { Platform, View, StyleSheet, Pressable } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CartIndicator } from '../../frontend/components/CartIndicator';
+import { useCartStore } from '../../frontend/stores/useCartStore';
 import * as Haptics from 'expo-haptics';
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { getTotalItems } = useCartStore();
+  const hasCartItems = getTotalItems() > 0;
   
   return (
     <View style={{ flex: 1 }}>
@@ -94,7 +97,7 @@ export default function TabsLayout() {
         />
       </Tabs>
       <Pressable 
-        style={styles.fab} 
+        style={[styles.fab, { bottom: hasCartItems ? 180 : 100 }]} 
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.push('/concierge');
@@ -120,7 +123,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 120, // Adjust position as needed
     right: 20,
     width: 60,
     height: 60,

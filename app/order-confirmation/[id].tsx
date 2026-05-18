@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,9 +22,10 @@ export default function OrderConfirmation() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { orders, updateOrderStatus } = useOrderStore();
+  const { orders, updateOrderStatus, rateOrder } = useOrderStore();
   
   const order = orders.find(o => o.id === id);
+  const [selectedRating, setSelectedRating] = useState<number>(order?.rating ?? 0);
   
   const checkScale = useSharedValue(0);
   const checkOpacity = useSharedValue(0);
@@ -36,23 +37,6 @@ export default function OrderConfirmation() {
       withTiming(1, { duration: 200 })
     ));
     checkOpacity.value = withDelay(500, withTiming(1, { duration: 300 }));
-
-    if (order && order.status === 'preparing') {
-      const readyTimer = setTimeout(() => {
-        updateOrderStatus(order.id, 'ready');
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
-        const message = order.orderType === 'dine-in'
-          ? `Your order for Table ${order.tableNumber} is ready to be served!`
-          : order.orderType === 'pickup' 
-          ? "Your order is ready for pickup!" 
-          : "Your order is prepared and out for delivery!";
-          
-        Alert.alert("Order Update 🧑‍🍳", message);
-      }, 10000); // Trigger after 10 seconds for demo purposes
-      
-      return () => clearTimeout(readyTimer);
-    }
   }, []);
 
   const animatedCheckStyle = useAnimatedStyle(() => ({
@@ -138,13 +122,25 @@ export default function OrderConfirmation() {
         <Animated.View entering={FadeInDown.delay(1200)} style={styles.promoCard}>
            <View style={styles.promoInfo}>
               <Text style={styles.promoTitle}>Rate your experience</Text>
-              <Text style={styles.promoSubtitle}>Help us improve our bistro service</Text>
+              <Text style={styles.promoSubtitle}>
+                {selectedRating > 0 ? `You rated us ${selectedRating} star${selectedRating > 1 ? 's' : ''} — Thank you! 🙏` : 'Help us improve our bistro service'}
+              </Text>
               <View style={styles.stars}>
                  {[1,2,3,4,5].map(i => (
-                   <Pressable key={i} onPress={() => {
-                     Alert.alert("Thank You!", `You rated us ${i} star${i>1?'s':''}. We appreciate your feedback!`);
-                   }}>
-                     <Star size={24} color="#C1A87D" fill="#C1A87D" style={{ marginRight: 6 }} />
+                   <Pressable
+                     key={i}
+                     onPress={() => {
+                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                       setSelectedRating(i);
+                       if (order) rateOrder(order.id, i);
+                     }}
+                     style={{ marginRight: 6 }}
+                   >
+                     <Star
+                       size={28}
+                       color="#C1A87D"
+                       fill={i <= selectedRating ? '#C1A87D' : 'transparent'}
+                     />
                    </Pressable>
                  ))}
               </View>

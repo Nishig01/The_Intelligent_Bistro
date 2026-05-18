@@ -107,7 +107,16 @@ export default function ManageAddresses() {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable 
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/');
+              }
+            }} 
+            style={styles.backBtn}
+          >
             <ChevronLeft size={24} color="#1A1A1A" />
           </Pressable>
           <Text style={styles.headerTitle}>Delivery Addresses</Text>

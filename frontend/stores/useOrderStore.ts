@@ -19,12 +19,16 @@ export interface Order {
   eta: string;
   orderType?: 'delivery' | 'pickup' | 'dine-in';
   tableNumber?: string;
+  rating?: number; // 1-5 stars
+  customerName?: string;
+  customerEmail?: string;
 }
 
 interface OrderState {
   orders: Order[];
   addOrder: (order: Order) => void;
   updateOrderStatus: (id: string, status: Order['status']) => void;
+  rateOrder: (id: string, rating: number) => void;
 }
 
 export const useOrderStore = create<OrderState>()(
@@ -34,6 +38,9 @@ export const useOrderStore = create<OrderState>()(
       addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
       updateOrderStatus: (id, status) => set((state) => ({
         orders: state.orders.map(o => o.id === id ? { ...o, status } : o)
+      })),
+      rateOrder: (id, rating) => set((state) => ({
+        orders: state.orders.map(o => o.id === id ? { ...o, rating } : o)
       })),
     }),
     {

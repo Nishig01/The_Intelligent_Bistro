@@ -504,6 +504,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 10,
     color: '#1A1A1A',
+    outlineWidth: 0,
   },
   clearBtn: {
     width: 24,
