@@ -7,6 +7,7 @@ import { useCartStore } from '../frontend/stores/useCartStore';
 import { menuData } from '../frontend/data/menu';
 import Toast from 'react-native-toast-message';
 import SmartImage from '../frontend/components/SmartImage';
+import { getApiUrl } from '../frontend/utils/api';
 
 const INITIAL_SUGGESTIONS = [
   "What are today's specials?",
@@ -52,17 +53,19 @@ export default function Concierge() {
     setLoading(true);
 
     try {
-      // Automatically detect if we are on Expo Metro port 8081 and point to Express port 3000
-      let apiBase = process.env.EXPO_PUBLIC_API_URL || '';
-      if (!apiBase && Platform.OS === 'web' && typeof window !== 'undefined' && window.location.port === '8081') {
-        apiBase = 'http://localhost:3000';
-      }
+      const apiBase = getApiUrl();
 
       const response = await fetch(`${apiBase}/api/ai/order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage, currentCart: items })
       });
+      
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${response.status} Connection Error`);
+      }
+
       const data = await response.json();
 
       // Save assistant message alongside actions to render rich product cards
@@ -125,8 +128,13 @@ export default function Concierge() {
           }
         });
       }
-    } catch (e) {
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: "I apologize, but I'm having trouble connecting to my culinary database. How else can I help?" }]);
+    } catch (e: any) {
+      console.warn("Concierge AI Connection Error:", e);
+      setMessages(prev => [...prev, { 
+        id: Date.now() + 1, 
+        role: 'assistant', 
+        content: `I apologize, but I encountered a connection issue: "${e.message || 'Culinary database offline'}". Please make sure your backend server is active and try again!` 
+      }]);
     } finally {
       setLoading(false);
     }

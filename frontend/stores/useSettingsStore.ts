@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { mmkvStorage } from '../lib/mmkv';
 
 interface NotificationSettings {
   orderUpdates: boolean;
@@ -28,6 +29,9 @@ export const useSettingsStore = create<SettingsState>()(
           },
         })),
     }),
-    { name: 'settings-store' }
+    {
+      name: 'settings-store',
+      storage: createJSONStorage(() => mmkvStorage),
+    }
   )
 );

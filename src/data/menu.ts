@@ -29,7 +29,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of signature tiramisu, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 10,
     "category": "Desserts",
-    "imageUrl": "https://images.unsplash.com/photo-1551024506-0bc4a2cb1cbf?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&q=80&w=800",
     "options": [
       "Served Chilled",
       "Room Temperature"
@@ -172,7 +172,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of grilled panna cotta, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 9,
     "category": "Desserts",
-    "imageUrl": "https://images.unsplash.com/photo-1563805042-7684c8a9e9cb?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&q=80&w=800",
     "dietary": [
       "Gluten-Free"
     ],
@@ -256,7 +256,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of classic asparagus, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 6,
     "category": "Sides",
-    "imageUrl": "https://images.unsplash.com/photo-1551228639-65b50033ad11?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800",
     "dietary": [
       "Vegan",
       "Gluten-Free"
@@ -310,7 +310,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of spicy lava cake, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 6,
     "category": "Desserts",
-    "imageUrl": "https://images.unsplash.com/photo-1551024506-0bc4a2cb1cbf?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&q=80&w=800",
     "options": [
       "Extra Shot",
       "Almond Milk",
@@ -359,7 +359,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of classic creme brulee, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 10,
     "category": "Desserts",
-    "imageUrl": "https://images.unsplash.com/photo-1563805042-7684c8a9e9cb?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&q=80&w=800",
     "options": [
       "Add Bacon",
       "Extra Cheese",
@@ -422,7 +422,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of chilled side salad, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 11,
     "category": "Sides",
-    "imageUrl": "https://images.unsplash.com/photo-1551228639-65b50033ad11?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800",
     "dietary": [
       "Vegetarian"
     ],
@@ -483,7 +483,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of roasted tart, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 9,
     "category": "Desserts",
-    "imageUrl": "https://images.unsplash.com/photo-1551024506-0bc4a2cb1cbf?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1519915028121-7d3463d20b13?auto=format&fit=crop&q=80&w=800",
     "options": [
       "Gluten-Free Option",
       "Extra Sauce"
@@ -549,7 +549,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of chilled dumplings, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 16,
     "category": "Starters",
-    "imageUrl": "https://images.unsplash.com/photo-1615486171448-4df27063bd56?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&q=80&w=800",
     "options": [
       "Gluten-Free Option",
       "Extra Sauce"
@@ -594,7 +594,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of rich garlic bread, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 11,
     "category": "Sides",
-    "imageUrl": "https://images.unsplash.com/photo-1551228639-65b50033ad11?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-157314168485-3236d6710814?auto=format&fit=crop&q=80&w=800",
     "dietary": [
       "Dairy-Free"
     ],
@@ -606,7 +606,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of zesty panna cotta, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 12,
     "category": "Desserts",
-    "imageUrl": "https://images.unsplash.com/photo-1563805042-7684c8a9e9cb?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&q=80&w=800",
     "calories": 289
   },
   {
@@ -642,7 +642,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of premium bruschetta, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 14,
     "category": "Starters",
-    "imageUrl": "https://images.unsplash.com/photo-1615486171448-4df27063bd56?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&q=80&w=800",
     "calories": 278
   },
   {
@@ -685,7 +685,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of aged mashed potatoes, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 6,
     "category": "Sides",
-    "imageUrl": "https://images.unsplash.com/photo-1625938146369-adc8336262b9?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&q=80&w=800",
     "options": [
       "Extra Shot",
       "Almond Milk",
@@ -794,7 +794,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of aged mousse, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 11,
     "category": "Desserts",
-    "imageUrl": "https://images.unsplash.com/photo-1563805042-7684c8a9e9cb?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&q=80&w=800",
     "options": [
       "Vegan Cheese"
     ],

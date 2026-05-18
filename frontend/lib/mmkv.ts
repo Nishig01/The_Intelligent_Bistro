@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
 let storage: any;
+const memoryStore = new Map<string, string>();
 
 if (Platform.OS !== 'web') {
   try {
@@ -10,29 +11,36 @@ if (Platform.OS !== 'web') {
     });
   } catch (e) {
     console.warn('MMKV failed to initialize:', e);
-    // Fallback if native module is not available
   }
 }
 
 export const mmkvStorage = {
   setItem: (name: string, value: string) => {
-    if (Platform.OS === 'web' || !storage) {
+    if (Platform.OS === 'web') {
       localStorage.setItem(name, value);
-    } else {
+    } else if (storage) {
       storage.set(name, value);
+    } else {
+      memoryStore.set(name, value);
     }
   },
   getItem: (name: string) => {
-    if (Platform.OS === 'web' || !storage) {
+    if (Platform.OS === 'web') {
       return localStorage.getItem(name);
     }
-    return storage.getString(name) ?? null;
+    if (storage) {
+      return storage.getString(name) ?? null;
+    }
+    return memoryStore.get(name) ?? null;
   },
   removeItem: (name: string) => {
-    if (Platform.OS === 'web' || !storage) {
+    if (Platform.OS === 'web') {
       localStorage.removeItem(name);
-    } else {
+    } else if (storage) {
       storage.delete(name);
+    } else {
+      memoryStore.delete(name);
     }
   },
 };
+

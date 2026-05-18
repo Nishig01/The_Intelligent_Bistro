@@ -14,8 +14,8 @@ export function getGoogleAuthUrl(redirectUri: string) {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 }
 
-export async function handleGoogleCallback(code: string, state: string) {
-  const redirectUri = state || `${process.env.APP_URL || 'http://localhost:3000'}/auth/google/callback`;
+export async function handleGoogleCallback(code: string, state: string, backendCallbackUri?: string) {
+  const redirectUri = backendCallbackUri || state || `${process.env.APP_URL || 'http://localhost:3000'}/auth/google/callback`;
 
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',

@@ -2,6 +2,7 @@ import { BottomSheetBackdrop, BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { sendLocalNotification } from '../frontend/utils/notifications';
+import { getApiUrl } from '../frontend/utils/api';
 import { Apple, ChevronLeft, ChevronRight, CreditCard, MapPin, ShieldCheck, Smartphone, Wallet } from 'lucide-react-native';
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -25,6 +26,24 @@ export default function Checkout() {
       if (unsubscribe) unsubscribe();
     };
   }, [syncAddresses]);
+
+  useEffect(() => {
+    if (addresses.length > 0) {
+      const addr = addresses.find(a => a.isDefault) || addresses[0];
+      if (addr) {
+        setGuestStreet(prev => prev || addr.street || '');
+        setGuestCity(prev => prev || addr.city || '');
+        setGuestZip(prev => prev || addr.zipCode || '');
+      }
+    }
+  }, [addresses]);
+
+  useEffect(() => {
+    if (user?.email) {
+      setGuestEmail(prev => prev || user.email || '');
+    }
+  }, [user]);
+
   const { addOrder } = useOrderStore();
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
@@ -95,10 +114,14 @@ export default function Checkout() {
         ? (defaultAddress || { id: 'guest', label: 'Home' as AddressType, fullName: user?.name || 'User', street: user?.deliveryAddress || '123 Default St', city: 'City', state: '', zipCode: '00000', isDefault: true })
         : { id: 'guest', label: 'Home' as AddressType, fullName: 'Guest', street: guestStreet, city: guestCity, state: '', zipCode: guestZip, isDefault: true };
 
+      // Capture snapshots of items and total before clearing the cart
+      const itemsSnapshot = [...items];
+      const totalSnapshot = total;
+
       addOrder({
         id: orderId,
-        items: [...items],
-        total,
+        items: itemsSnapshot,
+        total: totalSnapshot,
         subtotal,
         tax,
         deliveryFee,
@@ -122,20 +145,24 @@ export default function Checkout() {
       // Send order confirmation email (fire-and-forget)
       const emailTo = isAuthenticated ? user?.email : guestEmail;
       if (emailTo) {
-        const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-        fetch(`${API_URL}/api/orders`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId,
-            items: [...items],
-            total,
-            customerName: isAuthenticated ? user?.name : 'Valued Guest',
-            email: emailTo,
-            orderType,
-            eta: orderType === 'delivery' ? '25-35 mins' : '10-15 mins',
-          })
-        }).catch(err => console.warn('Email send failed (non-blocking):', err));
+        try {
+          const API_URL = getApiUrl();
+          fetch(`${API_URL}/api/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              items: itemsSnapshot,
+              total: totalSnapshot,
+              customerName: isAuthenticated ? user?.name : 'Valued Guest',
+              email: emailTo,
+              orderType,
+              eta: orderType === 'delivery' ? '25-35 mins' : '10-15 mins',
+            })
+          }).catch(err => console.warn('Email send failed (non-blocking):', err));
+        } catch (fetchErr) {
+          console.warn('Sync fetch launch failed:', fetchErr);
+        }
       }
 
       router.push({
@@ -375,7 +402,9 @@ export default function Checkout() {
         <Animated.View entering={FadeInDown.delay(200)} style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Add a Tip</Text>
-            <Text style={styles.actionText}>100% goes to driver</Text>
+            <Text style={styles.actionText}>
+              {orderType === 'delivery' ? '100% goes to driver' : '100% goes to chef and waiters'}
+            </Text>
           </View>
           <View style={styles.tipOptions}>
             {tips.map(tip => (

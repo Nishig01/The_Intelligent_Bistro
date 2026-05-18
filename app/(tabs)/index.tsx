@@ -67,7 +67,7 @@ const QuantityControls = ({ item }: { item: MenuItem }) => {
 
 export default function Home() {
   const router = useRouter();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const filterModalRef = useRef<BottomSheetModal>(null);
@@ -90,6 +90,13 @@ export default function Home() {
 
   const { user, isAuthenticated } = useAuthStore();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning,';
+    if (hour < 17) return 'Good Afternoon,';
+    return 'Good Evening,';
+  };
   
   const categories = ['All', 'Starters', 'Mains', 'Sides', 'Desserts', 'Drinks'];
   const dietaryFilters = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy-Free', 'High Protein'];
@@ -241,11 +248,17 @@ export default function Home() {
   };
 
   const welcomeAnimatedStyle = useAnimatedStyle(() => {
+    // Continuously fade out from scroll offset 0 to 60 to prevent discrete switches
+    const opacity = interpolate(scrollY.value, [0, 60], [1, 0], Extrapolation.CLAMP);
+    // Continuously shift upward to create a sleek visual parallax feel
+    const translateY = interpolate(scrollY.value, [0, 60], [0, -15], Extrapolation.CLAMP);
+    
     return {
-      height: withSpring(scrollY.value > 20 ? 0 : 80, { damping: 20, stiffness: 90 }),
-      opacity: withSpring(scrollY.value > 20 ? 0 : 1),
-      transform: [{ translateY: withSpring(scrollY.value > 20 ? -20 : 0) }],
-      marginBottom: withSpring(scrollY.value > 20 ? 0 : 10),
+      opacity,
+      transform: [{ translateY }],
+      // Keep height and margin-bottom constant to prevent feedback loops in the ScrollView layout tree
+      height: 80,
+      marginBottom: 10,
       overflow: 'hidden',
     };
   });
@@ -307,7 +320,7 @@ export default function Home() {
         >
           {/* Greeting */}
           <Animated.View style={[styles.welcomeSection, welcomeAnimatedStyle]}>
-            <Text style={styles.greeting}>Good Evening,</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.userName}>{isAuthenticated ? user?.name?.split(' ')[0] : 'Guest'} ✨</Text>
           </Animated.View>
 

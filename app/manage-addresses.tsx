@@ -1,12 +1,11 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, Plus, MapPin, Home, Briefcase, MoreHorizontal, Trash2, CheckCircle2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAddressStore, Address, AddressType } from '../frontend/stores/useAddressStore';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInRight, FadeOutLeft, FadeInDown } from 'react-native-reanimated';
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
 export default function ManageAddresses() {
   const router = useRouter();
@@ -20,9 +19,7 @@ export default function ManageAddresses() {
     };
   }, [syncAddresses]);
   
-  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ['85%', '95%'], []);
-  
+  const [modalVisible, setModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -52,7 +49,7 @@ export default function ManageAddresses() {
 
   const handleAddPress = () => {
     resetForm();
-    bottomSheetModalRef.current?.present();
+    setModalVisible(true);
   };
 
   const handleEditPress = (address: Address) => {
@@ -65,7 +62,7 @@ export default function ManageAddresses() {
     setIsDefault(address.isDefault);
     setIsEditing(true);
     setEditingId(address.id);
-    bottomSheetModalRef.current?.present();
+    setModalVisible(true);
   };
 
   const handleSave = async () => {
@@ -100,18 +97,13 @@ export default function ManageAddresses() {
     }
     
     setIsSaving(false);
-    bottomSheetModalRef.current?.dismiss();
-    bottomSheetModalRef.current?.close();
+    setModalVisible(false);
   };
 
   const handleDelete = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     deleteAddress(id);
   };
-
-  const renderBackdrop = (props: any) => (
-    <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
-  );
 
   const getIcon = (type: AddressType) => {
     switch (type) {
@@ -141,7 +133,7 @@ export default function ManageAddresses() {
           <View style={{ width: 44 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
           {addresses.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
@@ -211,128 +203,133 @@ export default function ManageAddresses() {
         </View>
       </SafeAreaView>
 
-      <BottomSheetModal
-        ref={bottomSheetModalRef}
-        index={0}
-        snapPoints={snapPoints}
-        backdropComponent={renderBackdrop}
-        handleIndicatorStyle={{ backgroundColor: '#D1D5DB' }}
-        backgroundStyle={{ borderRadius: 32 }}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
       >
-        <BottomSheetScrollView 
-          contentContainerStyle={[
-            styles.sheetContent, 
-            { paddingBottom: Platform.OS === 'ios' ? 100 : 60 }
-          ]}
-        >
-          <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
-          >
-            <Text style={styles.sheetTitle}>{isEditing ? 'Edit Address' : 'New Address'}</Text>
-            
-            <View style={styles.formGroup}>
-              <Text style={styles.inputLabel}>Label</Text>
-              <View style={styles.labelPicker}>
-                {(['Home', 'Work', 'Other'] as AddressType[]).map((l) => (
-                  <Pressable 
-                    key={l}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setLabel(l);
-                    }}
-                    style={[styles.labelBtn, label === l && styles.labelBtnActive]}
-                  >
-                    {getIcon(l)}
-                    <Text style={[styles.labelText, label === l && styles.labelTextActive]}>{l}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput 
-                style={[styles.input, !!errors.fullName && styles.inputError]}
-                placeholder="Receiver's name"
-                value={fullName}
-                onChangeText={(t) => { setFullName(t); if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' })); }}
-              />
-              {!!errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.inputLabel}>Address Line 1</Text>
-              <TextInput 
-                style={[styles.input, !!errors.street && styles.inputError]}
-                placeholder="Street name, house/flat number"
-                value={street}
-                onChangeText={(t) => { setStreet(t); if (errors.street) setErrors(prev => ({ ...prev, street: '' })); }}
-              />
-              {!!errors.street && <Text style={styles.errorText}>{errors.street}</Text>}
-            </View>
-
-            <View style={styles.row}>
-              <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>City</Text>
-                <TextInput 
-                  style={[styles.input, !!errors.city && styles.inputError]}
-                  placeholder="New York"
-                  value={city}
-                  onChangeText={(t) => { setCity(t); if (errors.city) setErrors(prev => ({ ...prev, city: '' })); }}
-                />
-                {!!errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
-              </View>
-              <View style={[styles.formGroup, { width: 100 }]}>
-                <Text style={styles.inputLabel}>State</Text>
-                <TextInput 
-                  style={[styles.input, !!errors.state && styles.inputError]}
-                  placeholder="NY"
-                  value={state}
-                  onChangeText={(t) => { setState(t); if (errors.state) setErrors(prev => ({ ...prev, state: '' })); }}
-                />
-                {!!errors.state && <Text style={styles.errorText}>{errors.state}</Text>}
-              </View>
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.inputLabel}>Zip Code</Text>
-              <TextInput 
-                style={[styles.input, !!errors.zipCode && styles.inputError]}
-                placeholder="10001"
-                value={zipCode}
-                onChangeText={(t) => { setZipCode(t); if (errors.zipCode) setErrors(prev => ({ ...prev, zipCode: '' })); }}
-                keyboardType="numeric"
-              />
-              {!!errors.zipCode && <Text style={styles.errorText}>{errors.zipCode}</Text>}
-            </View>
-
-            <Pressable 
-              style={styles.defaultToggle}
-              onPress={() => setIsDefault(!isDefault)}
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalDismissArea} onPress={() => setModalVisible(false)} />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            <ScrollView 
+              contentContainerStyle={[
+                styles.sheetContent, 
+                { paddingBottom: Platform.OS === 'ios' ? 100 : 60 }
+              ]}
+              showsVerticalScrollIndicator={false}
             >
-              <View style={[styles.checkbox, isDefault && styles.checkboxActive]}>
-                {isDefault && <CheckCircle2 size={16} color="#FFF" />}
-              </View>
-              <Text style={styles.defaultToggleText}>Set as default delivery address</Text>
-            </Pressable>
+              <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+              >
+                <Text style={styles.sheetTitle}>{isEditing ? 'Edit Address' : 'New Address'}</Text>
+                
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Label</Text>
+                  <View style={styles.labelPicker}>
+                    {(['Home', 'Work', 'Other'] as AddressType[]).map((l) => (
+                      <Pressable 
+                        key={l}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setLabel(l);
+                        }}
+                        style={[styles.labelBtn, label === l && styles.labelBtnActive]}
+                      >
+                        {getIcon(l)}
+                        <Text style={[styles.labelText, label === l && styles.labelTextActive]}>{l}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
 
-            <View style={{ height: 40 }} />
-            
-            <Pressable 
-              style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]} 
-              onPress={handleSave}
-              disabled={isSaving}
-            >
-              <Text style={styles.saveBtnText}>
-                {isSaving ? 'Saving...' : (isEditing ? 'Update Address' : 'Save Address')}
-              </Text>
-            </Pressable>
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Full Name</Text>
+                  <TextInput 
+                    style={[styles.input, !!errors.fullName && styles.inputError]}
+                    placeholder="Receiver's name"
+                    value={fullName}
+                    onChangeText={(t) => { setFullName(t); if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' })); }}
+                  />
+                  {!!errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+                </View>
 
-            <View style={{ height: 40 }} />
-          </KeyboardAvoidingView>
-        </BottomSheetScrollView>
-      </BottomSheetModal>
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Address Line 1</Text>
+                  <TextInput 
+                    style={[styles.input, !!errors.street && styles.inputError]}
+                    placeholder="Street name, house/flat number"
+                    value={street}
+                    onChangeText={(t) => { setStreet(t); if (errors.street) setErrors(prev => ({ ...prev, street: '' })); }}
+                  />
+                  {!!errors.street && <Text style={styles.errorText}>{errors.street}</Text>}
+                </View>
+
+                <View style={styles.row}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
+                    <Text style={styles.inputLabel}>City</Text>
+                    <TextInput 
+                      style={[styles.input, !!errors.city && styles.inputError]}
+                      placeholder="New York"
+                      value={city}
+                      onChangeText={(t) => { setCity(t); if (errors.city) setErrors(prev => ({ ...prev, city: '' })); }}
+                    />
+                    {!!errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
+                  </View>
+                  <View style={[styles.formGroup, { width: 100 }]}>
+                    <Text style={styles.inputLabel}>State</Text>
+                    <TextInput 
+                      style={[styles.input, !!errors.state && styles.inputError]}
+                      placeholder="NY"
+                      value={state}
+                      onChangeText={(t) => { setState(t); if (errors.state) setErrors(prev => ({ ...prev, state: '' })); }}
+                    />
+                    {!!errors.state && <Text style={styles.errorText}>{errors.state}</Text>}
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Zip Code</Text>
+                  <TextInput 
+                    style={[styles.input, !!errors.zipCode && styles.inputError]}
+                    placeholder="10001"
+                    value={zipCode}
+                    onChangeText={(t) => { setZipCode(t); if (errors.zipCode) setErrors(prev => ({ ...prev, zipCode: '' })); }}
+                    keyboardType="numeric"
+                  />
+                  {!!errors.zipCode && <Text style={styles.errorText}>{errors.zipCode}</Text>}
+                </View>
+
+                <Pressable 
+                  style={styles.defaultToggle}
+                  onPress={() => setIsDefault(!isDefault)}
+                >
+                  <View style={[styles.checkbox, isDefault && styles.checkboxActive]}>
+                    {isDefault && <CheckCircle2 size={16} color="#FFF" />}
+                  </View>
+                  <Text style={styles.defaultToggleText}>Set as default delivery address</Text>
+                </Pressable>
+
+                <View style={{ height: 40 }} />
+                
+                <Pressable 
+                  style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]} 
+                  onPress={handleSave}
+                  disabled={isSaving}
+                >
+                  <Text style={styles.saveBtnText}>
+                    {isSaving ? 'Saving...' : (isEditing ? 'Update Address' : 'Save Address')}
+                  </Text>
+                </Pressable>
+
+                <View style={{ height: 40 }} />
+              </KeyboardAvoidingView>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -483,12 +480,10 @@ const styles = StyleSheet.create({
     borderLeftColor: '#F3F4F6',
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     padding: 24,
     backgroundColor: '#F8F5F0',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.05)',
   },
   addNewBtn: {
     height: 60,
@@ -619,5 +614,33 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
     marginLeft: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalDismissArea: {
+    flex: 1,
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 24,
+  },
+  modalHandle: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 8,
   },
 });

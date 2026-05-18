@@ -74,13 +74,40 @@ export default function AuthScreen() {
       router.replace('/(tabs)');
     } catch (error: any) {
       const msg =
-        error.code === 'auth/user-not-found' ? 'No account found with this email. Please sign up.' :
+        error.code === 'auth/user-not-found' ? 'No account found with this email. Please tap "Sign Up" below to create one instantly!' :
           error.code === 'auth/wrong-password' ? 'Incorrect password. Please try again.' :
             error.code === 'auth/email-already-in-use' ? 'An account already exists with this email. Sign in instead.' :
-              error.code === 'auth/invalid-credential' ? 'Invalid email or password.' :
+              error.code === 'auth/invalid-credential' ? 'Invalid email or password. If you don\'t have an account yet, please tap "Sign Up" below to create one instantly!' :
                 error.code === 'auth/network-request-failed' ? 'Network error. Please check your connection.' :
                   'Something went wrong. Please try again.';
       Alert.alert('Authentication Error', msg);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  };
+
+  const handleDemoSignIn = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const { emailSignIn, emailSignUp } = useAuthStore.getState();
+      
+      try {
+        await emailSignIn('bistro.demo@intellibistro.com', 'BistroDemo123!');
+      } catch (err: any) {
+        // Automatically sign up if not in Firebase yet
+        await emailSignUp(
+          'Nishigandha Mali',
+          'bistro.demo@intellibistro.com',
+          'BistroDemo123!',
+          '+1 (555) 123-4567',
+          '456 Gourmet Ave, San Francisco, CA'
+        );
+      }
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      console.error('Demo Sign In error:', error);
+      Alert.alert('Demo Sign In Failed', 'Failed to authenticate demo account. Please try again.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
@@ -240,6 +267,11 @@ export default function AuthScreen() {
                   <Text style={styles.googleIcon}>G</Text>
                 </View>
                 <Text style={styles.googleBtnText}>Continue with Google</Text>
+              </Pressable>
+
+              <Pressable style={styles.demoBtn} onPress={handleDemoSignIn}>
+                <ChefHat size={20} color="#C1A87D" />
+                <Text style={styles.demoBtnText}>Quick Demo Login (1-Tap)</Text>
               </Pressable>
             </Animated.View>
 
@@ -428,5 +460,22 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     marginTop: 4,
     marginLeft: 4,
+  },
+  demoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(193, 168, 125, 0.08)',
+    height: 64,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(193, 168, 125, 0.3)',
+    gap: 12,
+    marginTop: 8,
+  },
+  demoBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#C1A87D',
   },
 });

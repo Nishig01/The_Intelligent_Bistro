@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { sendLocalNotification } from '../../frontend/utils/notifications';
+import { getApiUrl } from '../../frontend/utils/api';
 import { Bike, CheckCircle2, ChefHat, ChevronLeft, Clock, PackageCheck } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -49,10 +50,35 @@ export default function TrackOrderScreen() {
   const { orders, updateOrderStatus } = useOrderStore();
 
   const order = orders.find(o => o.id === id);
-  const [timeLeft, setTimeLeft] = useState(PREPARING_SECS);
-  const [isDelivered, setIsDelivered] = useState(false);
 
-const STAGES = getStages(order?.orderType);
+  const getInitialTimeLeft = () => {
+    if (!order) return PREPARING_SECS;
+    if (order.status === 'delivered') return 0;
+    
+    const orderTime = new Date(order.date).getTime();
+    const elapsed = Math.floor((Date.now() - orderTime) / 1000);
+    
+    const isDelivery = order.orderType === 'delivery' || !order.orderType;
+    if (isDelivery) {
+      if (elapsed < PREPARING_SECS) {
+        return PREPARING_SECS - elapsed;
+      }
+      if (elapsed < PREPARING_SECS + ON_THE_WAY_SECS) {
+        return PREPARING_SECS + ON_THE_WAY_SECS - elapsed;
+      }
+      return 0;
+    } else {
+      if (elapsed < PREPARING_SECS) {
+        return PREPARING_SECS - elapsed;
+      }
+      return 0;
+    }
+  };
+
+  const [timeLeft, setTimeLeft] = useState(getInitialTimeLeft);
+  const [isDelivered, setIsDelivered] = useState(order?.status === 'delivered');
+
+  const STAGES = getStages(order?.orderType);
   const isDelivery = order?.orderType === 'delivery' || !order?.orderType;
 
   // Keep currentStage in sync with order.status
@@ -86,7 +112,7 @@ const STAGES = getStages(order?.orderType);
 
     const orderTime = new Date(order.date).getTime();
 
-    const timer = setInterval(() => {
+    const tick = () => {
       const elapsed = Math.floor((Date.now() - orderTime) / 1000);
 
       if (isDelivery) {
@@ -95,22 +121,17 @@ const STAGES = getStages(order?.orderType);
           setTimeLeft(PREPARING_SECS - elapsed);
         } else if (elapsed < PREPARING_SECS + ON_THE_WAY_SECS) {
           if (order.status !== 'on_the_way') {
-             updateOrderStatus(order.id, 'on_the_way');
-             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            updateOrderStatus(order.id, 'on_the_way');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Toast.show({
-              type: 'success',
-              text1: 'Order Completed!',
-              text2: 'Returning to Home screen...',
+              type: 'info',
+              text1: 'Order En Route! 🚴‍♂️',
+              text2: 'Your delicious meal is on the way.',
             });
-            sendLocalNotification('Order Delivered! 🎉', 'Enjoy your meal from The Intelligent Bistro.');
-            setTimeout(() => {
-              clearCart();
-              router.replace('/(tabs)');
-            }, 3500);
+            sendLocalNotification('Order Out for Delivery! 🚴‍♂️', 'Your courier is en route with your food.');
           }
           setTimeLeft(PREPARING_SECS + ON_THE_WAY_SECS - elapsed);
         } else {
-          clearInterval(timer);
           if (order.status !== 'delivered') {
             updateOrderStatus(order.id, 'delivered');
             setIsDelivered(true);
@@ -128,17 +149,21 @@ const STAGES = getStages(order?.orderType);
             }, 3500);
             
             if (order.customerEmail) {
-              const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-              fetch(`${API_URL}/api/orders/delivery`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  orderId: order.id,
-                  customerName: order.customerName,
-                  email: order.customerEmail,
-                  total: order.total
-                })
-              }).catch(err => console.warn('Delivery email send failed:', err));
+              try {
+                const API_URL = getApiUrl();
+                fetch(`${API_URL}/api/orders/delivery`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    orderId: order.id,
+                    customerName: order.customerName,
+                    email: order.customerEmail,
+                    total: order.total
+                  })
+                }).catch(err => console.warn('Delivery email send failed:', err));
+              } catch (fetchErr) {
+                console.warn('Sync delivery fetch launch failed:', fetchErr);
+              }
             }
           }
         }
@@ -148,7 +173,6 @@ const STAGES = getStages(order?.orderType);
           if (order.status !== 'preparing') updateOrderStatus(order.id, 'preparing');
           setTimeLeft(PREPARING_SECS - elapsed);
         } else {
-          clearInterval(timer);
           if (order.status !== 'delivered') {
             updateOrderStatus(order.id, 'delivered');
             setIsDelivered(true);
@@ -159,29 +183,38 @@ const STAGES = getStages(order?.orderType);
               text1: 'Order Completed!',
               text2: 'Returning to Home screen...',
             });
+            sendLocalNotification('Order Ready! 🍽️', 'Your dining experience is ready at The Intelligent Bistro.');
             setTimeout(() => {
               clearCart();
               router.replace('/(tabs)');
             }, 3500);
             
             if (order.customerEmail) {
-              const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-              fetch(`${API_URL}/api/orders/delivery`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  orderId: order.id,
-                  customerName: order.customerName,
-                  email: order.customerEmail,
-                  total: order.total
-                })
-              }).catch(err => console.warn('Delivery email send failed:', err));
+              try {
+                const API_URL = getApiUrl();
+                fetch(`${API_URL}/api/orders/delivery`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    orderId: order.id,
+                    customerName: order.customerName,
+                    email: order.customerEmail,
+                    total: order.total
+                  })
+                }).catch(err => console.warn('Delivery email send failed:', err));
+              } catch (fetchErr) {
+                console.warn('Sync delivery fetch launch failed:', fetchErr);
+              }
             }
           }
         }
       }
-    }, 1000);
+    };
 
+    // Run tick immediately on load to sync timer
+    tick();
+
+    const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, [order?.status, order?.id, isDelivery, order?.date]);
 

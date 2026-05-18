@@ -2,15 +2,22 @@ import nodemailer from "nodemailer";
 
 // Reusable transporter — uses Ethereal (dev preview) or real SMTP via env vars
 async function getTransporter() {
-  if (process.env.SMTP_HOST) {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    });
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    try {
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+      await transporter.verify();
+      console.log("Gmail SMTP Connection verified successfully!");
+      return transporter;
+    } catch (smtpError) {
+      console.warn("Gmail SMTP Verification failed, falling back to Ethereal:", smtpError);
+    }
   }
+
   // Dev fallback: Ethereal free test account
+  console.log("Creating Ethereal test email account...");
   const testAccount = await nodemailer.createTestAccount();
   return nodemailer.createTransport({
     host: "smtp.ethereal.email",

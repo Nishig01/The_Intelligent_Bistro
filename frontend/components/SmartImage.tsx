@@ -1,15 +1,29 @@
 import React, { useState } from 'react';
-import { View, Image, StyleSheet, ActivityIndicator, ImageProps, StyleProp, ImageStyle } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, StyleProp, ImageStyle } from 'react-native';
+import { Image } from 'expo-image';
 import { ImageOff } from 'lucide-react-native';
 
-interface SmartImageProps extends Omit<ImageProps, 'source'> {
+interface SmartImageProps {
   source: { uri?: string };
   style?: StyleProp<ImageStyle>;
+  contentFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+  resizeMode?: 'contain' | 'cover' | 'stretch' | 'center' | string;
+  onLoadStart?: () => void;
+  onLoadEnd?: () => void;
+  onError?: (error: any) => void;
 }
 
-export default function SmartImage({ source, style, ...props }: SmartImageProps) {
+export default function SmartImage({ source, style, contentFit, resizeMode, ...props }: SmartImageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [fallbackUri, setFallbackUri] = useState<string | null>(null);
+
+  // Map legacy resizeMode to modern contentFit
+  const resolvedContentFit: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down' = contentFit || (
+    resizeMode === 'stretch' ? 'fill' :
+    resizeMode === 'contain' ? 'contain' :
+    resizeMode === 'cover' ? 'cover' : 'cover'
+  );
 
   // If no URI is provided at all
   if (!source || !source.uri) {
@@ -20,15 +34,28 @@ export default function SmartImage({ source, style, ...props }: SmartImageProps)
     );
   }
 
-  // Reset state if URI changes (but not on initial mount to avoid overriding fast cached loads)
+  // Reset state if URI changes
   const previousUri = React.useRef(source?.uri);
   React.useEffect(() => {
     if (previousUri.current !== source?.uri) {
       setLoading(true);
       setError(false);
+      setFallbackUri(null);
       previousUri.current = source?.uri;
     }
   }, [source?.uri]);
+
+  const handleError = (e: any) => {
+    if (!fallbackUri) {
+      setFallbackUri("https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=600&q=80"); // Use guaranteed stable Truffle Fries gourmet URL!
+      setLoading(true);
+      setError(false);
+    } else {
+      setLoading(false);
+      setError(true);
+      props.onError?.(e);
+    }
+  };
 
   return (
     <View style={[styles.container, style]}>
@@ -44,19 +71,23 @@ export default function SmartImage({ source, style, ...props }: SmartImageProps)
         </View>
       ) : (
         <Image
-          source={source}
+          key={fallbackUri || source.uri}
+          source={{ uri: fallbackUri || source.uri }}
           style={[StyleSheet.absoluteFill, style]}
-          onLoadStart={props.onLoadStart}
+          contentFit={resolvedContentFit}
+          transition={200}
+          onLoadStart={() => {
+            setLoading(true);
+            props.onLoadStart?.();
+          }}
           onLoad={() => {
             setLoading(false);
             props.onLoadEnd?.();
           }}
           onError={(e) => {
-            setLoading(false);
-            setError(true);
-            props.onError?.(e);
+            console.warn(`SmartImage failed to load URI: ${fallbackUri || source.uri}. Activating self-healing fallback.`, e);
+            handleError(e);
           }}
-          {...props}
         />
       )}
     </View>

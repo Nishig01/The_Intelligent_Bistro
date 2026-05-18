@@ -5,6 +5,7 @@ import { useCartStore } from '../stores/useCartStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useOrderStore } from '../stores/useOrderStore';
 import { useAddressStore } from '../stores/useAddressStore';
+import { getApiUrl } from '../utils/api';
 
 interface CheckoutDrawerProps {
   onClose: () => void;
@@ -81,11 +82,7 @@ export function CheckoutDrawer({ onClose, onSuccess, onBack }: CheckoutDrawerPro
     });
 
     try {
-      // Automatically detect if we are on Expo Metro port 8081 and point to Express port 3000
-      let apiBase = '';
-      if (typeof window !== 'undefined' && window.location.port === '8081') {
-        apiBase = 'http://localhost:3000';
-      }
+      const apiBase = getApiUrl();
 
       // Send confirmation email
       await fetch(`${apiBase}/api/orders`, {
