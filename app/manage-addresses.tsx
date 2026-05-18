@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, Plus, MapPin, Home, Briefcase, MoreHorizontal, Trash2, CheckCircle2 } from 'lucide-react-native';
@@ -11,7 +11,14 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetScro
 export default function ManageAddresses() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { addresses, addAddress, deleteAddress, setDefaultAddress, updateAddress } = useAddressStore();
+  const { addresses, addAddress, deleteAddress, setDefaultAddress, updateAddress, syncAddresses } = useAddressStore();
+  
+  useEffect(() => {
+    const unsubscribe = syncAddresses();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [syncAddresses]);
   
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['85%', '95%'], []);
@@ -19,6 +26,7 @@ export default function ManageAddresses() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Form State
   const [label, setLabel] = useState<AddressType>('Home');
@@ -39,6 +47,7 @@ export default function ManageAddresses() {
     setIsDefault(addresses.length === 0);
     setIsEditing(false);
     setEditingId(null);
+    setErrors({});
   };
 
   const handleAddPress = () => {
@@ -60,11 +69,19 @@ export default function ManageAddresses() {
   };
 
   const handleSave = async () => {
-    if (!fullName.trim() || !street.trim() || !city.trim() || !zipCode.trim() || !state.trim()) {
-      Alert.alert('Missing Information', 'Please provide all delivery details so your food reaches you correctly.');
+    const newErrors: Record<string, string> = {};
+    if (!fullName.trim()) newErrors.fullName = 'Full name is required';
+    if (!street.trim()) newErrors.street = 'Street address is required';
+    if (!city.trim()) newErrors.city = 'City is required';
+    if (!state.trim()) newErrors.state = 'State is required';
+    if (!zipCode.trim()) newErrors.zipCode = 'Zip code is required';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
+    setErrors({});
 
     setIsSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -84,6 +101,7 @@ export default function ManageAddresses() {
     
     setIsSaving(false);
     bottomSheetModalRef.current?.dismiss();
+    bottomSheetModalRef.current?.close();
   };
 
   const handleDelete = (id: string) => {
@@ -235,53 +253,58 @@ export default function ManageAddresses() {
             <View style={styles.formGroup}>
               <Text style={styles.inputLabel}>Full Name</Text>
               <TextInput 
-                style={styles.input}
+                style={[styles.input, !!errors.fullName && styles.inputError]}
                 placeholder="Receiver's name"
                 value={fullName}
-                onChangeText={setFullName}
+                onChangeText={(t) => { setFullName(t); if (errors.fullName) setErrors(prev => ({ ...prev, fullName: '' })); }}
               />
+              {!!errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
             </View>
 
             <View style={styles.formGroup}>
               <Text style={styles.inputLabel}>Address Line 1</Text>
               <TextInput 
-                style={styles.input}
+                style={[styles.input, !!errors.street && styles.inputError]}
                 placeholder="Street name, house/flat number"
                 value={street}
-                onChangeText={setStreet}
+                onChangeText={(t) => { setStreet(t); if (errors.street) setErrors(prev => ({ ...prev, street: '' })); }}
               />
+              {!!errors.street && <Text style={styles.errorText}>{errors.street}</Text>}
             </View>
 
             <View style={styles.row}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.inputLabel}>City</Text>
                 <TextInput 
-                  style={styles.input}
+                  style={[styles.input, !!errors.city && styles.inputError]}
                   placeholder="New York"
                   value={city}
-                  onChangeText={setCity}
+                  onChangeText={(t) => { setCity(t); if (errors.city) setErrors(prev => ({ ...prev, city: '' })); }}
                 />
+                {!!errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
               </View>
               <View style={[styles.formGroup, { width: 100 }]}>
                 <Text style={styles.inputLabel}>State</Text>
                 <TextInput 
-                  style={styles.input}
+                  style={[styles.input, !!errors.state && styles.inputError]}
                   placeholder="NY"
                   value={state}
-                  onChangeText={setState}
+                  onChangeText={(t) => { setState(t); if (errors.state) setErrors(prev => ({ ...prev, state: '' })); }}
                 />
+                {!!errors.state && <Text style={styles.errorText}>{errors.state}</Text>}
               </View>
             </View>
 
             <View style={styles.formGroup}>
               <Text style={styles.inputLabel}>Zip Code</Text>
               <TextInput 
-                style={styles.input}
+                style={[styles.input, !!errors.zipCode && styles.inputError]}
                 placeholder="10001"
                 value={zipCode}
-                onChangeText={setZipCode}
+                onChangeText={(t) => { setZipCode(t); if (errors.zipCode) setErrors(prev => ({ ...prev, zipCode: '' })); }}
                 keyboardType="numeric"
               />
+              {!!errors.zipCode && <Text style={styles.errorText}>{errors.zipCode}</Text>}
             </View>
 
             <Pressable 
@@ -585,5 +608,16 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: '700',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    borderWidth: 1.5,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+    marginLeft: 4,
   },
 });

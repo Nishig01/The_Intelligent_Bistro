@@ -1,11 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { sendLocalNotification } from '../../frontend/utils/notifications';
 import { Bike, CheckCircle2, ChefHat, ChevronLeft, Clock, PackageCheck } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, SlideInUp } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOrderStore } from '../../frontend/stores/useOrderStore';
+import { useCartStore } from '../../frontend/stores/useCartStore';
+import Toast from 'react-native-toast-message';
 
 
 // Demo: 2 min preparing → 2 min on_the_way → delivered  (4 min total)
@@ -41,6 +44,7 @@ export default function TrackOrderScreen() {
 
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const clearCart = useCartStore(s => s.clearCart);
   const insets = useSafeAreaInsets();
   const { orders, updateOrderStatus } = useOrderStore();
 
@@ -93,6 +97,16 @@ const STAGES = getStages(order?.orderType);
           if (order.status !== 'on_the_way') {
              updateOrderStatus(order.id, 'on_the_way');
              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Toast.show({
+              type: 'success',
+              text1: 'Order Completed!',
+              text2: 'Returning to Home screen...',
+            });
+            sendLocalNotification('Order Delivered! 🎉', 'Enjoy your meal from The Intelligent Bistro.');
+            setTimeout(() => {
+              clearCart();
+              router.replace('/(tabs)');
+            }, 3500);
           }
           setTimeLeft(PREPARING_SECS + ON_THE_WAY_SECS - elapsed);
         } else {
@@ -102,6 +116,16 @@ const STAGES = getStages(order?.orderType);
             setIsDelivered(true);
             setTimeLeft(0);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Toast.show({
+              type: 'success',
+              text1: 'Order Completed!',
+              text2: 'Returning to Home screen...',
+            });
+            sendLocalNotification('Order Delivered! 🎉', 'Enjoy your meal from The Intelligent Bistro.');
+            setTimeout(() => {
+              clearCart();
+              router.replace('/(tabs)');
+            }, 3500);
             
             if (order.customerEmail) {
               const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
@@ -130,6 +154,15 @@ const STAGES = getStages(order?.orderType);
             setIsDelivered(true);
             setTimeLeft(0);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Toast.show({
+              type: 'success',
+              text1: 'Order Completed!',
+              text2: 'Returning to Home screen...',
+            });
+            setTimeout(() => {
+              clearCart();
+              router.replace('/(tabs)');
+            }, 3500);
             
             if (order.customerEmail) {
               const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';

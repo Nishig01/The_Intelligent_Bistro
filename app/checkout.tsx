@@ -1,8 +1,9 @@
 import { BottomSheetBackdrop, BottomSheetModal } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { sendLocalNotification } from '../frontend/utils/notifications';
 import { Apple, ChevronLeft, ChevronRight, CreditCard, MapPin, ShieldCheck, Smartphone, Wallet } from 'lucide-react-native';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +17,14 @@ export default function Checkout() {
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated } = useAuthStore();
   const { items, getTotalPrice, clearCart } = useCartStore();
-  const { addresses } = useAddressStore();
+  const { addresses, syncAddresses } = useAddressStore();
+
+  useEffect(() => {
+    const unsubscribe = syncAddresses();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [syncAddresses]);
   const { addOrder } = useOrderStore();
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
@@ -109,6 +117,7 @@ export default function Checkout() {
       setIsProcessing(false);
       clearCart();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      sendLocalNotification('Order Placed Successfully!', 'Your order is being sent to the kitchen.');
 
       // Send order confirmation email (fire-and-forget)
       const emailTo = isAuthenticated ? user?.email : guestEmail;

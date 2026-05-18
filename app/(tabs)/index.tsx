@@ -1,5 +1,8 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
+import SmartImage from '../../frontend/components/SmartImage';
+import { FilterModal, FilterState, PriceOption } from '../../frontend/components/FilterModal';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChefHat, Search, SlidersHorizontal, Sparkles, Plus, Minus, ShoppingCart, ArrowRight, Star, Clock, Heart, X, User } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -9,7 +12,7 @@ import { useFavoritesStore } from '../../frontend/stores/useFavoritesStore';
 import { menuData, MenuItem } from '../../frontend/data/menu';
 import { Skeleton } from '../../frontend/components/Skeleton';
 import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
+
 import Animated, { 
   FadeInDown, 
   FadeInRight, 
@@ -67,8 +70,14 @@ export default function Home() {
   const scrollRef = useRef<ScrollView>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [activeDietary, setActiveDietary] = useState<string | null>(null);
+  const filterModalRef = useRef<BottomSheetModal>(null);
+  const [filters, setFilters] = useState<FilterState>({
+    category: 'All',
+    dietary: null,
+    priceType: 'All',
+    rating: 0,
+    sort: 'Popularity'
+  });
   const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   
@@ -85,23 +94,112 @@ export default function Home() {
   const categories = ['All', 'Starters', 'Mains', 'Sides', 'Desserts', 'Drinks'];
   const dietaryFilters = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy-Free', 'High Protein'];
   
-  const featuredItems = menuData.filter(item => item.id === 'wagyu_burger' || item.id === 'wild_mushroom_risotto');
+  // Deterministic helper functions for menu item rating & prep time
+  const getItemRating = useCallback((id: string): number => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const rating = 4.2 + (Math.abs(hash) % 9) * 0.1; // 4.2 to 5.0 stars
+    return Math.min(Math.round(rating * 10) / 10, 5.0);
+  }, []);
 
-  const filteredMenu = menuData.filter(item => {
-    const query = debouncedSearchQuery.toLowerCase().trim();
-    if (query) {
-      // Fuzzy matching across multiple fields
-      const searchString = `${item.name} ${item.category} ${item.dietary?.join(' ')} ${item.description}`.toLowerCase();
-      // Partial matching logic
-      const words = query.split(' ');
-      const matchesSearch = words.every(word => searchString.includes(word));
-      if (!matchesSearch) return false;
+  const getItemPrepTime = useCallback((id: string): number => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return 15 + (Math.abs(hash) % 4) * 5; // 15, 20, 25, 30 min
+  }, []);
+
+  const activeFilterChips = useMemo(() => {
+    const chips = [];
+    
+    if (filters.dietary) {
+      chips.push({
+        id: 'dietary',
+        label: filters.dietary,
+        onClear: () => setFilters(prev => ({ ...prev, dietary: null }))
+      });
     }
     
-    const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
-    const matchesDietary = !activeDietary || (item.dietary && item.dietary.includes(activeDietary));
-    return matchesCategory && matchesDietary;
-  });
+    if (filters.priceType !== 'All') {
+      chips.push({
+        id: 'priceType',
+        label: filters.priceType === 'Low' ? 'Low Price (<$15)' : 'High Price ($15+)',
+        onClear: () => setFilters(prev => ({ ...prev, priceType: 'All' }))
+      });
+    }
+    
+    if (filters.rating > 0) {
+      chips.push({
+        id: 'rating',
+        label: `${filters.rating}+ ★`,
+        onClear: () => setFilters(prev => ({ ...prev, rating: 0 }))
+      });
+    }
+    
+    if (filters.sort !== 'Popularity') {
+      chips.push({
+        id: 'sort',
+        label: `Sort: ${filters.sort}`,
+        onClear: () => setFilters(prev => ({ ...prev, sort: 'Popularity' }))
+      });
+    }
+    
+    return chips;
+  }, [filters]);
+
+  const featuredItems = menuData.filter(item => item.id === 'wagyu_burger' || item.id === 'wild_mushroom_risotto');
+
+  const filteredMenu = useMemo(() => {
+    return menuData
+      .filter(item => {
+        // Search query check
+        const query = debouncedSearchQuery.toLowerCase().trim();
+        if (query) {
+          const searchString = `${item.name} ${item.category} ${item.dietary?.join(' ')} ${item.description}`.toLowerCase();
+          const words = query.split(' ');
+          const matchesSearch = words.every(word => searchString.includes(word));
+          if (!matchesSearch) return false;
+        }
+        
+        // Category check
+        const matchesCategory = filters.category === 'All' || item.category === filters.category;
+        if (!matchesCategory) return false;
+
+        // Dietary check
+        const matchesDietary = !filters.dietary || (item.dietary && item.dietary.includes(filters.dietary));
+        if (!matchesDietary) return false;
+
+        // Price Category check (Low / High price independent filtering)
+        let matchesPrice = true;
+        if (filters.priceType === 'Low') {
+          matchesPrice = item.price < 15;
+        } else if (filters.priceType === 'High') {
+          matchesPrice = item.price >= 15;
+        }
+        if (!matchesPrice) return false;
+
+        // Rating check
+        const rating = getItemRating(item.id);
+        const matchesRating = filters.rating === 0 || rating >= filters.rating;
+        if (!matchesRating) return false;
+
+        return true;
+      })
+      .sort((a, b) => {
+        // Sort check
+        if (filters.sort === 'Price: Low-High') {
+          return a.price - b.price;
+        } else if (filters.sort === 'Price: High-Low') {
+          return b.price - a.price;
+        } else {
+          // Default: Popularity (Rating) descending
+          return getItemRating(b.id) - getItemRating(a.id);
+        }
+      });
+  }, [debouncedSearchQuery, filters, getItemRating]);
 
   const handleItemPress = useCallback((id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -117,12 +215,21 @@ export default function Home() {
   };
 
   const onImageLoad = (id: string) => {
-    setImagesLoaded(prev => ({ ...prev, [id]: true }));
+    setImagesLoaded(prev => {
+      if (prev[id]) return prev;
+      return { ...prev, [id]: true };
+    });
   };
 
   const onImageError = (id: string) => {
-     setImageErrors(prev => ({ ...prev, [id]: true }));
-     setImagesLoaded(prev => ({ ...prev, [id]: true })); // Stop showing skeleton
+     setImageErrors(prev => {
+       if (prev[id]) return prev;
+       return { ...prev, [id]: true };
+     });
+     setImagesLoaded(prev => {
+       if (prev[id]) return prev;
+       return { ...prev, [id]: true };
+     });
   };
 
   const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800';
@@ -177,7 +284,7 @@ export default function Home() {
            <View style={styles.headerRight}>
               <Pressable style={styles.iconBtn} onPress={() => router.push('/(tabs)/profile')}>
                  {user?.avatar ? (
-                   <Image 
+                   <SmartImage 
                       source={{ uri: user.avatar }} 
                       style={styles.avatarMini}
                    />
@@ -224,7 +331,7 @@ export default function Home() {
                     <X size={16} color="#FFF" />
                   </Pressable>
                 )}
-                <Pressable style={styles.filterBtn}>
+                <Pressable style={styles.filterBtn} onPress={() => filterModalRef.current?.present()}>
                    <SlidersHorizontal size={18} color="#1A1A1A" />
                 </Pressable>
               </Animated.View>
@@ -237,34 +344,52 @@ export default function Home() {
                     key={cat} 
                     onPress={() => {
                       Haptics.selectionAsync();
-                      setActiveCategory(cat);
+                      setFilters(prev => ({ ...prev, category: cat }));
                     }}
-                    style={[styles.tab, activeCategory === cat && styles.tabActive]}
+                    style={[styles.tab, filters.category === cat && styles.tabActive]}
                   >
-                    <Text style={[styles.tabText, activeCategory === cat && styles.tabTextActive]}>{cat}</Text>
+                    <Text style={[styles.tabText, filters.category === cat && styles.tabTextActive]}>{cat}</Text>
                   </Pressable>
                 ))}
               </ScrollView>
               
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dietaryScroll}>
-                {dietaryFilters.map(diet => (
+              {activeFilterChips.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeChipsScroll}>
+                  {activeFilterChips.map(chip => (
+                    <Pressable 
+                      key={chip.id}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        chip.onClear();
+                      }}
+                      style={styles.activeChip}
+                    >
+                      <Text style={styles.activeChipText}>{chip.label}</Text>
+                      <X size={12} color="#C1A87D" />
+                    </Pressable>
+                  ))}
                   <Pressable 
-                    key={diet} 
                     onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setActiveDietary(activeDietary === diet ? null : diet);
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      setFilters(prev => ({
+                        ...prev,
+                        dietary: null,
+                        priceType: 'All',
+                        rating: 0,
+                        sort: 'Popularity'
+                      }));
                     }}
-                    style={[styles.dietaryBtn, activeDietary === diet && styles.dietaryBtnActive]}
+                    style={styles.clearAllBtn}
                   >
-                    <Text style={[styles.dietaryBtnText, activeDietary === diet && styles.dietaryBtnTextActive]}>{diet}</Text>
+                    <Text style={styles.clearAllText}>Clear All</Text>
                   </Pressable>
-                ))}
-              </ScrollView>
+                </ScrollView>
+              )}
             </View>
           </View>
 
           {/* Featured Horizontal Scroll */}
-          {!searchQuery && activeCategory === 'All' && (
+          {!searchQuery && filters.category === 'All' && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Chef's Signature</Text>
@@ -278,13 +403,19 @@ export default function Home() {
                   >
                     <Pressable style={styles.featuredCard} onPress={() => handleItemPress(item.id)}>
                       <View style={styles.featuredImageContainer}>
-                        {!imagesLoaded[item.id] && <Skeleton width="100%" height="100%" borderRadius={0} />}
-                        <Image 
+                        {!imagesLoaded[item.id] && (
+                          <Skeleton 
+                            width="100%" 
+                            height="100%" 
+                            borderRadius={0} 
+                            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+                          />
+                        )}
+                        <SmartImage 
                           source={{ uri: imageErrors[item.id] ? DEFAULT_IMAGE : item.imageUrl }} 
                           style={styles.featuredImage}
-                          contentFit="cover"
-                          transition={300}
-                          onLoad={() => onImageLoad(item.id)}
+                          resizeMode="cover"
+                          onLoadEnd={() => onImageLoad(item.id)}
                           onError={() => onImageError(item.id)}
                         />
                         <Pressable 
@@ -303,10 +434,10 @@ export default function Home() {
                             <Text style={styles.featuredName}>{item.name}</Text>
                             <View style={styles.badgeLine}>
                                <Star size={12} color="#C1A87D" fill="#C1A87D" />
-                               <Text style={styles.ratingText}>4.9</Text>
+                               <Text style={styles.ratingText}>{getItemRating(item.id).toFixed(1)}</Text>
                                <Text style={styles.dot}>•</Text>
                                <Clock size={12} color="#6B7280" />
-                               <Text style={styles.ratingText}>25 min</Text>
+                               <Text style={styles.ratingText}>{getItemPrepTime(item.id)} min</Text>
                             </View>
                             <Text style={styles.featuredPrice}>${item.price.toFixed(2)}</Text>
                           </View>
@@ -357,16 +488,26 @@ export default function Home() {
                             <Text style={styles.dietaryText}>{item.dietary[0]}</Text>
                           </View>
                         )}
+                        <View style={styles.ratingBadge}>
+                          <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                          <Text style={styles.menuRatingText}>{getItemRating(item.id).toFixed(1)}</Text>
+                        </View>
                       </View>
                     </View>
                     <View style={styles.menuImageContainer}>
-                      {!imagesLoaded[item.id] && <Skeleton width={100} height={100} borderRadius={18} />}
-                      <Image 
+                      {!imagesLoaded[item.id] && (
+                        <Skeleton 
+                          width={80} 
+                          height={80} 
+                          borderRadius={12} 
+                          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+                        />
+                      )}
+                      <SmartImage 
                         source={{ uri: imageErrors[item.id] ? DEFAULT_IMAGE : item.imageUrl }} 
                         style={styles.menuImage}
-                        contentFit="cover"
-                        transition={200}
-                        onLoad={() => onImageLoad(item.id)}
+                        resizeMode="cover"
+                        onLoadEnd={() => onImageLoad(item.id)}
                         onError={() => onImageError(item.id)}
                       />
                       <Pressable 
@@ -396,6 +537,13 @@ export default function Home() {
       </SafeAreaView>
 
       {/* Floating AI Concierge Button */}
+
+      <FilterModal
+        ref={filterModalRef}
+        filters={filters}
+        setFilters={setFilters}
+        onClose={() => filterModalRef.current?.dismiss()}
+      />
     </View>
   );
 }
@@ -573,6 +721,66 @@ const styles = StyleSheet.create({
   },
   dietaryBtnTextActive: {
     color: '#C1A87D',
+  },
+  priceScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 15,
+    gap: 8,
+  },
+  priceBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  priceBtnActive: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#D97706',
+  },
+  priceBtnText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+  priceBtnTextActive: {
+    color: '#D97706',
+  },
+  activeChipsScroll: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 12,
+    gap: 8,
+    alignItems: 'center',
+  },
+  activeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(193, 168, 125, 0.08)',
+    borderWidth: 1,
+    borderColor: '#C1A87D',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 6,
+  },
+  activeChipText: {
+    fontSize: 12,
+    color: '#1A1A1A',
+    fontWeight: '600',
+  },
+  clearAllBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clearAllText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   section: {
     marginTop: 10,
@@ -793,6 +1001,20 @@ const styles = StyleSheet.create({
     color: '#C1A87D',
     fontWeight: '700',
     textTransform: 'uppercase',
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    gap: 4,
+  },
+  menuRatingText: {
+    fontSize: 10,
+    color: '#D97706',
+    fontWeight: '700',
   },
   emptySearch: {
     alignItems: 'center',

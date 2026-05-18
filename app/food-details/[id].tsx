@@ -62,7 +62,7 @@ export default function FoodDetails() {
           <Image 
             source={{ uri: imageError ? DEFAULT_IMAGE : item.imageUrl }} 
             style={styles.image}
-            contentFit="cover"
+            resizeMode="cover"
             onError={() => setImageError(true)}
           />
           <BlurView intensity={20} style={[styles.backButton, { top: insets.top + 10 }]}>
@@ -196,7 +196,7 @@ export default function FoodDetails() {
                        <Image
                          source={{ uri: s.imageUrl }}
                          style={styles.suggestionImg}
-                         contentFit="cover"
+                         resizeMode="cover"
                        />
                        <View style={styles.suggestionAddBtn}>
                          <Plus size={14} color="#FFF" />

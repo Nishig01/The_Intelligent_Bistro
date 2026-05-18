@@ -5,6 +5,8 @@ import { ChevronLeft, Send, Sparkles, User, Bot, Mic, X, Volume2 } from 'lucide-
 import { useRouter } from 'expo-router';
 import { useCartStore } from '../frontend/stores/useCartStore';
 import { menuData } from '../frontend/data/menu';
+import Toast from 'react-native-toast-message';
+import SmartImage from '../frontend/components/SmartImage';
 
 const INITIAL_SUGGESTIONS = [
   "What are today's specials?",
@@ -93,6 +95,13 @@ export default function Concierge() {
               if (menuItem) {
                 // Pass modifiers, spice levels, and instructions dynamically
                 addItem(menuItem, action.quantity || 1, action.modifiers || [], undefined, action.instructions);
+                Toast.show({
+                  type: 'success',
+                  text1: 'Added to Cart',
+                  text2: `${action.quantity || 1}x ${menuItem.name} added to your basket.`,
+                  position: 'top',
+                  topOffset: 60,
+                });
               }
               break;
             case 'remove':
@@ -219,7 +228,7 @@ export default function Concierge() {
 
                     return (
                       <View key={idx} style={styles.richCard}>
-                        <Image source={{ uri: menuItem.imageUrl }} style={styles.richCardImage} />
+                        <SmartImage source={{ uri: menuItem.imageUrl }} style={styles.richCardImage} />
                         <View style={styles.richCardContent}>
                           <Text style={styles.richCardName} numberOfLines={1}>{menuItem.name}</Text>
                           <Text style={styles.richCardPrice}>${menuItem.price.toFixed(2)}</Text>

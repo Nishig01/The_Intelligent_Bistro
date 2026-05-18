@@ -99,25 +99,8 @@ export const useAuthStore = create<AuthState>()(
           }
           // The onAuthStateChanged listener will handle state update
         } catch (error: any) {
-          console.warn('Google Sign In blocked (localhost not whitelisted in Firebase Console). Activating demo fallback.', error.code || error.message);
-          
-          // On localhost, Firebase always blocks Google Sign-In ("The requested action is invalid").
-          // Activate the graceful demo fallback for ANY error from signInWithPopup.
-          await new Promise(resolve => setTimeout(resolve, 600));
-          
-          const mockGoogleUser = {
-            id: 'google-mock-user-123',
-            name: 'Nishigandha Mali',
-            email: 'nishigandha@gmail.com',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-            token: 'mock-google-token-xyz'
-          };
-          
-          set({ 
-            user: mockGoogleUser, 
-            isAuthenticated: true, 
-            isLoading: false 
-          });
+          set({ isLoading: false });
+          throw error;
         }
       },
       emailSignIn: async (email, password) => {
@@ -133,13 +116,8 @@ export const useAuthStore = create<AuthState>()(
             set({ user: { id: result.user.uid, name: result.user.displayName || 'User', email }, isAuthenticated: true, isLoading: false });
           }
         } catch (error: any) {
-          console.warn('Email Sign In failed (possibly disabled in Firebase). Activating demo fallback.', error.code || error.message);
-          await new Promise(resolve => setTimeout(resolve, 600));
-          set({ 
-            user: { id: 'mock-user-' + Date.now(), name: 'Demo User', email }, 
-            isAuthenticated: true, 
-            isLoading: false 
-          });
+          set({ isLoading: false });
+          throw error;
         }
       },
       emailSignUp: async (name, email, password, phone, address) => {
@@ -159,13 +137,8 @@ export const useAuthStore = create<AuthState>()(
           });
           set({ user: { id: result.user.uid, name, email, phone, deliveryAddress: address }, isAuthenticated: true, isLoading: false });
         } catch (error: any) {
-          console.warn('Email Sign Up failed (possibly disabled in Firebase). Activating demo fallback.', error.code || error.message);
-          await new Promise(resolve => setTimeout(resolve, 600));
-          set({ 
-            user: { id: 'mock-user-' + Date.now(), name, email, phone, deliveryAddress: address }, 
-            isAuthenticated: true, 
-            isLoading: false 
-          });
+          set({ isLoading: false });
+          throw error;
         }
       },
       signup: async (userData) => {

@@ -4,7 +4,7 @@ import { X, CreditCard, Apple, ArrowRight, Loader2, CheckCircle2, ShieldCheck, C
 import { useCartStore } from '../stores/useCartStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useOrderStore } from '../stores/useOrderStore';
-import { useSettingsStore } from '../stores/useSettingsStore';
+import { useAddressStore } from '../stores/useAddressStore';
 
 interface CheckoutDrawerProps {
   onClose: () => void;
@@ -16,7 +16,7 @@ export function CheckoutDrawer({ onClose, onSuccess, onBack }: CheckoutDrawerPro
   const store = useCartStore();
   const { items } = store;
   const { user, isAuthenticated } = useAuthStore();
-  const { addresses } = useSettingsStore();
+  const { addresses } = useAddressStore();
   const addOrder = useOrderStore(state => state.addOrder);
   const subtotal = store.getTotalPrice();
   const taxesAndFees = subtotal * 0.08;
@@ -216,7 +216,7 @@ export function CheckoutDrawer({ onClose, onSuccess, onBack }: CheckoutDrawerPro
                       <button key={addr.id} onClick={() => { setAddressLine1(addr.street); setCityZip(addr.city); }} className="flex border border-gray-200 p-3 rounded-xl bg-white items-center justify-between hover:border-bistro-charcoal group cursor-pointer whitespace-nowrap shadow-sm">
                         <div className="flex items-center gap-2 text-[14px] text-gray-600 font-medium group-hover:text-bistro-charcoal text-left">
                           <MapPin size={18} className="text-gray-400 group-hover:text-bistro-charcoal" /> 
-                          <div><span className="block">{addr.name}</span><span className="block text-xs font-normal text-gray-400">{addr.street}</span></div>
+                          <div><span className="block">{addr.label}</span><span className="block text-xs font-normal text-gray-400">{addr.street}</span></div>
                         </div>
                       </button>
                     ))}

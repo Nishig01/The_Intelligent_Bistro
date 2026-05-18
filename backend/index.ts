@@ -68,7 +68,35 @@ async function startServer() {
         ];
         fallbackSuggestions = ["View Cart", "Checkout", "Clear Cart"];
       }
-      // 2. Check for "specials", "recommendations", "chef specials"
+      // 2. Check for specific non-menu cravings like "water", "sparkling", "soda", "coke"
+      else if (lowerMsg.includes("water") || lowerMsg.includes("sparkling") || lowerMsg.includes("soda") || lowerMsg.includes("coke") || lowerMsg.includes("pop")) {
+        const lemonade = menuData.find(m => m.id === "item_23");
+        const kombucha = menuData.find(m => m.id === "item_8");
+        fallbackMessage = `We don't have sparkling water or soda on our menu, but we do serve our refreshing ${lemonade?.name} ($${lemonade?.price}) and our premium ${kombucha?.name} ($${kombucha?.price}). Would you like to try one of these instead?`;
+        fallbackSuggestions = [`Add ${lemonade?.name}`, `Add ${kombucha?.name}`, "Browse Drinks"];
+      }
+      // 3. Check for vegan selections
+      else if (lowerMsg.includes("vegan")) {
+        const veganItems = menuData.filter(m => m.dietary?.includes("Vegan")).slice(0, 3);
+        fallbackMessage = "Here are our chef-recommended vegan specialties:\n" +
+          veganItems.map(item => `• ${item.name} ($${item.price}): ${item.description}`).join("\n");
+        fallbackSuggestions = veganItems.map(item => `Add ${item.name}`);
+      }
+      // 4. Check for desserts
+      else if (lowerMsg.includes("dessert") || lowerMsg.includes("sweet")) {
+        const desserts = menuData.filter(m => m.category === "Desserts").slice(0, 3);
+        fallbackMessage = "Indulge in our exquisite dessert selections:\n" +
+          desserts.map(item => `• ${item.name} ($${item.price}): ${item.description}`).join("\n");
+        fallbackSuggestions = desserts.map(item => `Add ${item.name}`);
+      }
+      // 5. Check for drinks or alcohol
+      else if (lowerMsg.includes("wine") || lowerMsg.includes("drink") || lowerMsg.includes("beverage") || lowerMsg.includes("beer") || lowerMsg.includes("alcohol")) {
+        const drinks = menuData.filter(m => m.category === "Drinks").slice(0, 3);
+        fallbackMessage = "Here are some perfect beverage selections:\n" +
+          drinks.map(item => `• ${item.name} ($${item.price}): ${item.description}`).join("\n");
+        fallbackSuggestions = drinks.map(item => `Add ${item.name}`);
+      }
+      // 6. Check for "specials", "recommendations", "chef specials"
       else if (lowerMsg.includes("special") || lowerMsg.includes("recommend") || lowerMsg.includes("chef") || lowerMsg.includes("suggest")) {
         const ribeye = menuData.find(m => m.id === "item_3");
         const tiramisu = menuData.find(m => m.id === "item_2");
@@ -80,34 +108,6 @@ async function startServer() {
           `• ${tartare?.name} ($${tartare?.price}): ${tartare?.description}`;
           
         fallbackSuggestions = ["Add all", "Add Grilled Ribeye", "Add Signature Tiramisu", "View Cart"];
-      }
-      // 3. Check for specific non-menu cravings like "water", "sparkling", "soda", "coke"
-      else if (lowerMsg.includes("water") || lowerMsg.includes("sparkling") || lowerMsg.includes("soda") || lowerMsg.includes("coke") || lowerMsg.includes("pop")) {
-        const lemonade = menuData.find(m => m.id === "item_23");
-        const kombucha = menuData.find(m => m.id === "item_8");
-        fallbackMessage = `We don't have sparkling water or soda on our menu, but we do serve our refreshing ${lemonade?.name} ($${lemonade?.price}) and our premium ${kombucha?.name} ($${kombucha?.price}). Would you like to try one of these instead?`;
-        fallbackSuggestions = [`Add ${lemonade?.name}`, `Add ${kombucha?.name}`, "Browse Drinks"];
-      }
-      // 4. Check for vegan selections
-      else if (lowerMsg.includes("vegan")) {
-        const veganItems = menuData.filter(m => m.dietary?.includes("Vegan")).slice(0, 3);
-        fallbackMessage = "Here are our chef-recommended vegan specialties:\n" +
-          veganItems.map(item => `• ${item.name} ($${item.price}): ${item.description}`).join("\n");
-        fallbackSuggestions = veganItems.map(item => `Add ${item.name}`);
-      }
-      // 5. Check for desserts
-      else if (lowerMsg.includes("dessert") || lowerMsg.includes("sweet")) {
-        const desserts = menuData.filter(m => m.category === "Desserts").slice(0, 3);
-        fallbackMessage = "Indulge in our exquisite dessert selections:\n" +
-          desserts.map(item => `• ${item.name} ($${item.price}): ${item.description}`).join("\n");
-        fallbackSuggestions = desserts.map(item => `Add ${item.name}`);
-      }
-      // 6. Check for drinks or alcohol
-      else if (lowerMsg.includes("wine") || lowerMsg.includes("drink") || lowerMsg.includes("beverage") || lowerMsg.includes("beer") || lowerMsg.includes("alcohol")) {
-        const drinks = menuData.filter(m => m.category === "Drinks").slice(0, 3);
-        fallbackMessage = "Here are some perfect beverage selections:\n" +
-          drinks.map(item => `• ${item.name} ($${item.price}): ${item.description}`).join("\n");
-        fallbackSuggestions = drinks.map(item => `Add ${item.name}`);
       }
       // 7. Check for general matching (e.g. "add steak", "tiramisu", "add ribeye", "add ribeye, tiramisu, and truffle tartare")
       else {

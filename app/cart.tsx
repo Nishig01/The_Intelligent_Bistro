@@ -82,7 +82,7 @@ export default function Cart() {
                 layout={Layout.springify()}
                 style={styles.itemCard}
               >
-                <Image source={{ uri: item.imageUrl }} style={styles.itemImage} contentFit="cover" />
+                <Image source={{ uri: item.imageUrl }} style={styles.itemImage} resizeMode="cover" />
                 <View style={styles.itemContent}>
                   <View style={styles.itemHeader}>
                     <Text style={styles.itemName}>{item.name}</Text>
@@ -137,7 +137,7 @@ export default function Cart() {
                   <Image
                     source={{ uri: suggestionItem.imageUrl }}
                     style={styles.aiSuggestionImg}
-                    contentFit="cover"
+                    resizeMode="cover"
                   />
                   <View style={styles.aiInfo}>
                     <Text style={styles.aiLabel}>BISTRO SUGGESTION</Text>

@@ -92,7 +92,7 @@ export default function FavoritesScreen() {
                     <Image 
                       source={{ uri: imageErrors[item.id] ? DEFAULT_IMAGE : item.imageUrl }} 
                       style={styles.cardImg} 
-                      contentFit="cover" 
+                      resizeMode="cover" 
                       onError={() => setImageErrors(prev => ({ ...prev, [item.id]: true }))}
                     />
                     <Pressable 

@@ -594,7 +594,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of rich garlic bread, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 11,
     "category": "Sides",
-    "imageUrl": "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1619531040576-f36b6375c3db?auto=format&fit=crop&q=80&w=800",
     "dietary": [
       "Dairy-Free"
     ],
@@ -1003,7 +1003,7 @@ export const menuData: MenuItem[] = [
     "description": "A delightful serving of pan-seared calamari, prepared with our chef's special recipe to bring out the finest flavors.",
     "price": 9,
     "category": "Starters",
-    "imageUrl": "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&q=80&w=800",
+    "imageUrl": "https://images.unsplash.com/photo-1599388836528-98e3b09228d4?auto=format&fit=crop&q=80&w=800",
     "options": [
       "Gluten-Free Option",
       "Extra Sauce"

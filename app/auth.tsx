@@ -1,11 +1,15 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 import { ChefHat, Lock, Mail, MapPin, Phone, User, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../frontend/stores/useAuthStore';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -88,9 +92,16 @@ export default function AuthScreen() {
       await signInWithGoogle();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(tabs)');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Google Sign In error:', error);
-      Alert.alert('Sign In Failed', 'We couldn\'t connect to your Google account. Please try again.');
+      let errorMsg = "We couldn't connect to your Google account. Please try again.";
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMsg = "This domain is not authorized for Google Sign-In in Firebase. Please add this domain (localhost) to your Authorized Domains list in the Firebase/GCP Console.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMsg = "The sign-in popup was closed before completing. Please try again.";
+      }
+      Alert.alert('Sign In Failed', errorMsg);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 

@@ -3,6 +3,8 @@ import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Platform } from 'react-native';
+import Toast from 'react-native-toast-message';
+import { requestNotificationPermissions } from '../frontend/utils/notifications';
 import { useAuthStore } from '../frontend/stores/useAuthStore';
 import { useAddressStore } from '../frontend/stores/useAddressStore';
 
@@ -29,6 +31,10 @@ export default function Layout() {
   }, [initAuth]);
 
   useEffect(() => {
+    requestNotificationPermissions();
+  }, []);
+
+  useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     if (isAuthenticated) {
       unsubscribe = syncAddresses();
@@ -45,6 +51,7 @@ export default function Layout() {
           <Stack.Screen name="manage-addresses" options={{ presentation: 'modal' }} />
           <Stack.Screen name="cart" options={{ presentation: 'modal' }} />
         </Stack>
+        <Toast />
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );

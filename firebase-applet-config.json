@@ -1,10 +1,10 @@
 {
-  "projectId": "fresh-sphinx-w8gvj",
-  "appId": "1:952527609370:web:e65f7a73e4341107c0bba3",
-  "apiKey": "AIzaSyCror0-BN5UB3vMOeBjSJa9NmYUduJ2QrI",
-  "authDomain": "fresh-sphinx-w8gvj.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-b19e9cfe-c87c-430d-80db-eee05842776b",
-  "storageBucket": "fresh-sphinx-w8gvj.firebasestorage.app",
-  "messagingSenderId": "952527609370",
-  "measurementId": ""
+  "apiKey": "AIzaSyAhgZkciwErhFYGhq-LSxNg_fGBXKE-VXI",
+  "authDomain": "theintelligentbistro.firebaseapp.com",
+  "projectId": "theintelligentbistro",
+  "storageBucket": "theintelligentbistro.firebasestorage.app",
+  "messagingSenderId": "545718532262",
+  "appId": "1:545718532262:web:e8811e6073e51a2d32dc67",
+  "measurementId": "G-JXQ2JQNL0Y",
+  "firestoreDatabaseId": "(default)"
 }

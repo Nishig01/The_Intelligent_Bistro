@@ -65,6 +65,18 @@ export const useAddressStore = create<AddressState>()(
       },
       addAddress: async (address) => {
         const user = auth.currentUser;
+        const tempId = Math.random().toString(36).substring(7);
+        const newAddress = { ...address, id: tempId };
+
+        // 1. Optimistic Update (Instantly update local state)
+        set((state) => {
+          let newAddresses = [...state.addresses];
+          if (address.isDefault) {
+            newAddresses = newAddresses.map(a => ({ ...a, isDefault: false }));
+          }
+          return { addresses: [...newAddresses, newAddress] };
+        });
+
         if (user) {
           const payload = {
             ...address,
@@ -72,73 +84,70 @@ export const useAddressStore = create<AddressState>()(
             createdAt: serverTimestamp()
           };
           
-          // If setting as default, unset others first in Firestore (or handle via rules/logic)
-          // For simplicity in the demo, we'll just add it. The client will handle UI.
+          if (address.isDefault) {
+            const q = query(collection(db, 'addresses'), where('userId', '==', user.uid), where('isDefault', '==', true));
+            const querySnapshot = await getDocs(q);
+            const batchPromises = querySnapshot.docs.map(docSnap => 
+              updateDoc(doc(db, 'addresses', docSnap.id), { isDefault: false })
+            );
+            await Promise.all(batchPromises);
+          }
+          
           await addDoc(collection(db, 'addresses'), payload)
             .catch(e => handleFirestoreError(e, OperationType.CREATE, 'addresses'));
-        } else {
-          // Fallback to local
-          const id = Math.random().toString(36).substring(7);
-          const newAddress = { ...address, id };
-          set((state) => {
-            let newAddresses = [...state.addresses];
-            if (address.isDefault) {
-              newAddresses = newAddresses.map(a => ({ ...a, isDefault: false }));
-            }
-            return { addresses: [...newAddresses, newAddress] };
-          });
         }
       },
       updateAddress: async (id, updatedAddress) => {
+        // 1. Optimistic Update (Instantly update local state)
+        set((state) => {
+          let newAddresses = state.addresses.map((a) =>
+            a.id === id ? { ...a, ...updatedAddress } : a
+          );
+          if (updatedAddress.isDefault) {
+            newAddresses = newAddresses.map((a) =>
+              a.id === id ? a : { ...a, isDefault: false }
+            );
+          }
+          return { addresses: newAddresses };
+        });
+
         const user = auth.currentUser;
         if (user) {
           const addressRef = doc(db, 'addresses', id);
           await updateDoc(addressRef, updatedAddress)
             .catch(e => handleFirestoreError(e, OperationType.UPDATE, `addresses/${id}`));
-        } else {
-          set((state) => {
-            let newAddresses = state.addresses.map((a) =>
-              a.id === id ? { ...a, ...updatedAddress } : a
-            );
-            if (updatedAddress.isDefault) {
-              newAddresses = newAddresses.map((a) =>
-                a.id === id ? a : { ...a, isDefault: false }
-              );
-            }
-            return { addresses: newAddresses };
-          });
         }
       },
       deleteAddress: async (id) => {
+        // 1. Optimistic Update (Instantly update local state)
+        set((state) => ({
+          addresses: state.addresses.filter((a) => a.id !== id),
+        }));
+
         const user = auth.currentUser;
         if (user) {
           const addressRef = doc(db, 'addresses', id);
           await deleteDoc(addressRef)
             .catch(e => handleFirestoreError(e, OperationType.DELETE, `addresses/${id}`));
-        } else {
-          set((state) => ({
-            addresses: state.addresses.filter((a) => a.id !== id),
-          }));
         }
       },
       setDefaultAddress: async (id) => {
+        // 1. Optimistic Update (Instantly update local state)
+        set((state) => ({
+          addresses: state.addresses.map((a) => ({
+            ...a,
+            isDefault: a.id === id,
+          })),
+        }));
+
         const user = auth.currentUser;
         if (user) {
-          // This requires updating all addresses - better to do in a batch or cloud function
-          // For now, update the targeted one and let onSnapshot handle sync
           const addresses = get().addresses;
           const updates = addresses.map(async (a) => {
             const addressRef = doc(db, 'addresses', a.id);
             return updateDoc(addressRef, { isDefault: a.id === id });
           });
           await Promise.all(updates).catch(e => handleFirestoreError(e, OperationType.UPDATE, 'addresses'));
-        } else {
-          set((state) => ({
-            addresses: state.addresses.map((a) => ({
-              ...a,
-              isDefault: a.id === id,
-            })),
-          }));
         }
       },
     }),
