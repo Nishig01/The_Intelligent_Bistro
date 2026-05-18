@@ -43,7 +43,7 @@ export default function Cart() {
               if (router.canGoBack()) {
                 router.back();
               } else {
-                router.replace('/');
+                router.replace('/(tabs)');
               }
             }} 
             style={styles.backButton}
@@ -68,7 +68,7 @@ export default function Cart() {
             </View>
             <Text style={styles.emptyTitle}>Your basket is empty</Text>
             <Text style={styles.emptySubtitle}>Looks like you haven't added anything to your basket yet.</Text>
-            <Pressable onPress={() => router.push('/')} style={styles.browseButton}>
+            <Pressable onPress={() => router.push('/(tabs)')} style={styles.browseButton}>
               <Text style={styles.browseButtonText}>Browse Menu</Text>
             </Pressable>
           </View>

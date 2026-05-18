@@ -160,7 +160,7 @@ export default function OrderConfirmation() {
         </Pressable>
         <Pressable 
           style={styles.homeBtn} 
-          onPress={() => router.replace('/')}
+          onPress={() => router.replace('/(tabs)')}
         >
           <Text style={styles.homeBtnText}>Back to Home</Text>
         </Pressable>

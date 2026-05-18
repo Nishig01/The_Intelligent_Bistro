@@ -130,7 +130,7 @@ export default function ManageAddresses() {
               if (router.canGoBack()) {
                 router.back();
               } else {
-                router.replace('/');
+                router.replace('/(tabs)');
               }
             }} 
             style={styles.backBtn}

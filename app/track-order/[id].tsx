@@ -195,7 +195,7 @@ const STAGES = getStages(order?.orderType);
     return (
       <SafeAreaView style={styles.container}>
         <Text style={styles.errorText}>Order not found</Text>
-        <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={styles.backBtn}>
+        <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={styles.backBtn}>
           <Text style={styles.backBtnText}>Go Back</Text>
         </Pressable>
       </SafeAreaView>
@@ -206,7 +206,7 @@ const STAGES = getStages(order?.orderType);
     <View style={styles.container}>
       <SafeAreaView style={styles.header} edges={['top']}>
         <View style={styles.headerRow}>
-          <Pressable style={styles.headerBtn} onPress={() => router.canGoBack() ? router.back() : router.replace('/')}>
+          <Pressable style={styles.headerBtn} onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')}>
             <ChevronLeft size={24} color="#1A1A1A" />
           </Pressable>
           <View style={styles.headerTitleContainer}>

@@ -2,7 +2,7 @@ import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@g
 import * as Haptics from 'expo-haptics';
 import { ArrowDown, ArrowUp, SlidersHorizontal, Star, X } from 'lucide-react-native';
 import { forwardRef, useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, Platform, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type SortOption = 'Popularity' | 'Price: Low-High' | 'Price: High-Low';
@@ -25,6 +25,7 @@ interface FilterModalProps {
 export const FilterModal = forwardRef<BottomSheetModal, FilterModalProps>(({ filters, setFilters, onClose }, ref) => {
   const insets = useSafeAreaInsets();
   const snapPoints = useMemo(() => ['80%'], []);
+  const ScrollContainer = Platform.OS === 'web' ? ScrollView : BottomSheetScrollView;
 
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -73,7 +74,7 @@ export const FilterModal = forwardRef<BottomSheetModal, FilterModalProps>(({ fil
         </Pressable>
       </View>
 
-      <BottomSheetScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}>
+      <ScrollContainer contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}>
         
         {/* Sort Section */}
         <View style={styles.section}>
@@ -169,7 +170,7 @@ export const FilterModal = forwardRef<BottomSheetModal, FilterModalProps>(({ fil
           </View>
         </View>
 
-      </BottomSheetScrollView>
+      </ScrollContainer>
 
       {/* Footer Actions */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>

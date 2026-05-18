@@ -29,19 +29,21 @@ export default function FoodDetails() {
 
   const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800';
 
+  const hasSpiceLevel = item.category !== 'Desserts' && item.category !== 'Drinks';
+
   const handleAddToCart = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     addItem(
       item,
       quantity,
       selectedOptions,
-      spiceLevel,
+      hasSpiceLevel ? spiceLevel : undefined,
       instructions.trim() || undefined
     );
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/');
+      router.replace('/(tabs)');
     }
   };
 
@@ -134,23 +136,25 @@ export default function FoodDetails() {
             </Animated.View>
           )}
 
-          <Animated.View entering={FadeInDown.delay(400)} style={styles.section}>
-            <Text style={styles.sectionTitle}>Spice Level</Text>
-            <View style={styles.spiceRow}>
-              {[1, 2, 3].map(level => (
-                <Pressable 
-                  key={level} 
-                  onPress={() => setSpiceLevel(level)}
-                  style={[styles.spiceButton, spiceLevel >= level && styles.spiceButtonActive]}
-                >
-                  <Flame size={20} color={spiceLevel >= level ? "#FFF" : "#D1D5DB"} />
-                </Pressable>
-              ))}
-              <Text style={styles.spiceLabel}>
-                {spiceLevel === 1 ? 'Mild' : spiceLevel === 2 ? 'Medium' : 'Hot'}
-              </Text>
-            </View>
-          </Animated.View>
+          {hasSpiceLevel && (
+            <Animated.View entering={FadeInDown.delay(400)} style={styles.section}>
+              <Text style={styles.sectionTitle}>Spice Level</Text>
+              <View style={styles.spiceRow}>
+                {[1, 2, 3].map(level => (
+                  <Pressable 
+                    key={level} 
+                    onPress={() => setSpiceLevel(level)}
+                    style={[styles.spiceButton, spiceLevel >= level && styles.spiceButtonActive]}
+                  >
+                    <Flame size={20} color={spiceLevel >= level ? "#FFF" : "#D1D5DB"} />
+                  </Pressable>
+                ))}
+                <Text style={styles.spiceLabel}>
+                  {spiceLevel === 1 ? 'Mild' : spiceLevel === 2 ? 'Medium' : 'Hot'}
+                </Text>
+              </View>
+            </Animated.View>
+          )}
 
           <Animated.View entering={FadeInDown.delay(500)} style={styles.section}>
             <Text style={styles.sectionTitle}>Cooking Instructions</Text>

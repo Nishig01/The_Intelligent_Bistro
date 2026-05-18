@@ -159,7 +159,7 @@ export default function Checkout() {
             if (router.canGoBack()) {
               router.back();
             } else {
-              router.replace('/');
+              router.replace('/(tabs)');
             }
           }}
           style={styles.backButton}

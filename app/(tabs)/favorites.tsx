@@ -75,7 +75,7 @@ export default function FavoritesScreen() {
               </View>
               <Text style={styles.emptyTitle}>Nothing here yet</Text>
               <Text style={styles.emptySubtitle}>Tap the heart icon on any dish to save it to your favorites.</Text>
-              <Pressable style={styles.browseBtn} onPress={() => router.push('/')}>
+              <Pressable style={styles.browseBtn} onPress={() => router.push('/(tabs)')}>
                  <Text style={styles.browseBtnText}>Explore Menu</Text>
               </Pressable>
             </View>

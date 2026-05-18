@@ -141,7 +141,7 @@ export default function OrdersScreen() {
                 </View>
                 <Text style={styles.emptyTitle}>No Active Orders</Text>
                 <Text style={styles.emptySubtitle}>When you place an order, it will appear here for tracking.</Text>
-                <Pressable style={styles.browseBtn} onPress={() => router.push('/')}>
+                <Pressable style={styles.browseBtn} onPress={() => router.push('/(tabs)')}>
                   <Text style={styles.browseBtnText}>Browse Menu</Text>
                 </Pressable>
               </View>

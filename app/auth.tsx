@@ -109,7 +109,7 @@ export default function AuthScreen() {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={styles.closeBtn}>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} style={styles.closeBtn}>
             <X size={24} color="#1A1A1A" />
           </Pressable>
           <View style={styles.logoContainer}>
