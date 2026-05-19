@@ -10,7 +10,7 @@ https://lucid.app/lucidchart/17bd13e1-f1bf-4430-8415-98487dd15ddf/edit?invitatio
 
 ## Features
 
-- **Autonomous AI Concierge**: Powered by the **Google GenAI SDK (Gemini 2.5 Flash)** with strict JSON schema outputs. It acts as an elite maître d'—capable of adding/removing items from your cart, recommending dishes, directing you to checkout, and engaging in charming, witty off-topic banter before seamlessly pivoting back to the menu!
+- **Autonomous AI Concierge**: Powered by the **Google GenAI SDK (Gemini 2.5 Flash)** with strict JSON schema outputs. It acts as an elite maître d'—capable of adding/removing items from your cart, recommending dishes, directing you to checkout, and engaging in charming, witty off-topic banter before seamlessly pivoting back to the menu! You can use text or voice to talk to AI.
 - **Resilient Fallback Engine**: If Gemini API quotas are reached or the server is offline, the backend engages a high-performance **natural language fallback compiler** to process orders, cater to cravings, suggest desserts, and process complex text commands flawlessly.
 - **Real-Time Address Book (Optimistic UI)**: Add, edit, delete, and manage multiple delivery locations with zero visual latency. Uses **Zustand + Cloud Firestore** to achieve immediate **0ms local UI render times** while updating the database in the background. Handles multi-default flags automatically!
 - **Elite Checkout Experience**: Smooth Apple Pay, credit card, and digital wallet payment integration, backed by beautiful haptic feedback, safe area insets, and micro-animations.
