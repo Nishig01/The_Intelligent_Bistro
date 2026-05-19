@@ -5,10 +5,10 @@ A state-of-the-art, AI-native gourmet dining and concierge-assisted food deliver
 Built using **Expo (React Native & Web)**, a lightweight **Express.js backend**, and **Google Firebase (Auth & Firestore)**.
 
 ---
-##ARCHITECTURE 
+## ARCHITECTURE 
 https://lucid.app/lucidchart/17bd13e1-f1bf-4430-8415-98487dd15ddf/edit?invitationId=inv_5538de39-f2bb-4ca1-95b9-18285b58764c
 
-##Features
+## Features
 
 - **Autonomous AI Concierge**: Powered by the **Google GenAI SDK (Gemini 2.5 Flash)** with strict JSON schema outputs. It acts as an elite maître d'—capable of adding/removing items from your cart, recommending dishes, directing you to checkout, and engaging in charming, witty off-topic banter before seamlessly pivoting back to the menu!
 - **Resilient Fallback Engine**: If Gemini API quotas are reached or the server is offline, the backend engages a high-performance **natural language fallback compiler** to process orders, cater to cravings, suggest desserts, and process complex text commands flawlessly.
