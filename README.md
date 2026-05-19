@@ -1,23 +1,25 @@
-# 🍽️ The Intelligent Bistro
+# The Intelligent Bistro
 
 A state-of-the-art, AI-native gourmet dining and concierge-assisted food delivery application. Combining high-fidelity design aesthetics, smooth micro-interactions, real-time Cloud Firestore synchronization, and an autonomous, intelligent Gemini 2.5-powered concierge.
 
 Built using **Expo (React Native & Web)**, a lightweight **Express.js backend**, and **Google Firebase (Auth & Firestore)**.
 
 ---
+##ARCHITECTURE 
+https://lucid.app/lucidchart/17bd13e1-f1bf-4430-8415-98487dd15ddf/edit?invitationId=inv_5538de39-f2bb-4ca1-95b9-18285b58764c
 
-## ✨ Features
+##Features
 
-- **🧠 Autonomous AI Concierge**: Powered by the **Google GenAI SDK (Gemini 2.5 Flash)** with strict JSON schema outputs. It acts as an elite maître d'—capable of adding/removing items from your cart, recommending dishes, directing you to checkout, and engaging in charming, witty off-topic banter before seamlessly pivoting back to the menu!
-- **⚡ Resilient Fallback Engine**: If Gemini API quotas are reached or the server is offline, the backend engages a high-performance **natural language fallback compiler** to process orders, cater to cravings, suggest desserts, and process complex text commands flawlessly.
-- **📍 Real-Time Address Book (Optimistic UI)**: Add, edit, delete, and manage multiple delivery locations with zero visual latency. Uses **Zustand + Cloud Firestore** to achieve immediate **0ms local UI render times** while updating the database in the background. Handles multi-default flags automatically!
-- **💳 Elite Checkout Experience**: Smooth Apple Pay, credit card, and digital wallet payment integration, backed by beautiful haptic feedback, safe area insets, and micro-animations.
-- **✉️ Transactional Emailing**: Integrated with **Nodemailer** to send stunning HTML-styled order confirmations and live delivery simulation emails, featuring online mail preview links (via Ethereal Mail).
-- **🎨 Curated Luxury Aesthetics**: Premium dark/cream typography (`Playfair Display` / `Inter`), iOS-like glassmorphic blur sheets, subtle card gradients, and smooth native animations powered by **React Native Reanimated**.
+- **Autonomous AI Concierge**: Powered by the **Google GenAI SDK (Gemini 2.5 Flash)** with strict JSON schema outputs. It acts as an elite maître d'—capable of adding/removing items from your cart, recommending dishes, directing you to checkout, and engaging in charming, witty off-topic banter before seamlessly pivoting back to the menu!
+- **Resilient Fallback Engine**: If Gemini API quotas are reached or the server is offline, the backend engages a high-performance **natural language fallback compiler** to process orders, cater to cravings, suggest desserts, and process complex text commands flawlessly.
+- **Real-Time Address Book (Optimistic UI)**: Add, edit, delete, and manage multiple delivery locations with zero visual latency. Uses **Zustand + Cloud Firestore** to achieve immediate **0ms local UI render times** while updating the database in the background. Handles multi-default flags automatically!
+- **Elite Checkout Experience**: Smooth Apple Pay, credit card, and digital wallet payment integration, backed by beautiful haptic feedback, safe area insets, and micro-animations.
+- **Transactional Emailing**: Integrated with **Nodemailer** to send stunning HTML-styled order confirmations and live delivery simulation emails, featuring online mail preview links (via Ethereal Mail).
+- **Curated Luxury Aesthetics**: Premium dark/cream typography (`Playfair Display` / `Inter`), iOS-like glassmorphic blur sheets, subtle card gradients, and smooth native animations powered by **React Native Reanimated**.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend Framework**: [Expo](https://expo.dev/) (React Native & Web)
 - **Navigation**: Expo Router (File-based routing)
@@ -30,7 +32,7 @@ Built using **Expo (React Native & Web)**, a lightweight **Express.js backend**,
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 /TheIntelligentBistro
@@ -48,7 +50,7 @@ Built using **Expo (React Native & Web)**, a lightweight **Express.js backend**,
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Prerequisites
 Ensure you have **Node.js (v18+)** and **npm** installed on your system.
@@ -86,7 +88,7 @@ npm run dev
 
 ---
 
-## 🔒 Security Audit & Safe Pushing
+## Security Audit & Safe Pushing
 This codebase has been thoroughly audited for security to guarantee **no sensitive credentials or private keys are committed**:
 - All personal keys, Gemini API tokens, and credentials reside strictly in `.env.local`.
 - `.gitignore` is pre-configured with the wildcard pattern `.env*` to prevent accidental pushing of secrets.
